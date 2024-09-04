@@ -2,7 +2,11 @@ import tkinter
 import tkinter.messagebox
 import customtkinter
 import tkinterDnD
+import threading
 from tkinter.filedialog import askopenfile
+
+import win32com.client
+
 import fill_block as fb
 from PIL.ImageOps import expand
 
@@ -12,7 +16,7 @@ customtkinter.set_appearance_mode("dark")  # Modes: "System" (standard), "Dark",
 customtkinter.set_default_color_theme("blue")  # Themes: "blue" (standard), "green", "dark-blue"
 
 app = customtkinter.CTk()
-app.geometry("900x300")
+app.geometry("800x350")
 app.title("a_acad v.0.001 (temp)")
 # app.resizable(width=False, height=False)
 
@@ -32,13 +36,13 @@ def open_file():
     if file is not None:
         content = file.name
         print(content)
-        file_name = customtkinter.CTkLabel(master=frame_1, text=f"{content}")
+        file_name = customtkinter.CTkLabel(master=frame_1, text=f"{content}", wraplength=300)
         file_name.grid(row=2, column=0, pady=10, padx=0.5)
     return content
 
 
 side_frame = customtkinter.CTkFrame(master=app, width=150, corner_radius=10)
-side_frame.grid(column=0, rowspan=4, pady=20, padx=50, sticky="nsew")
+side_frame.grid(column=0, rowspan=4, pady=20, padx=20, sticky="nsew")
 side_frame.grid_rowconfigure(4, weight=1)
 side_label = customtkinter.CTkLabel(master=side_frame, text="Modules", anchor="w",
                                     font=customtkinter.CTkFont(size=20, weight="bold"))
@@ -66,25 +70,94 @@ browse_button.grid(row=2, column=2, padx=(20, 20), pady=(20, 20), sticky="nsew")
 file_name = customtkinter.CTkLabel(master=frame_1, text=f"{content}")
 file_name.grid(row=2, column=0, pady=10, padx=1)
 
-
+progress_bar = customtkinter.CTkLabel(master=app, text=f"")
+progress_bar.grid(row=5, column=1, pady=10, padx=0.5)
+result_filling = customtkinter.CTkLabel(master=app, text=f"")
+result_filling.grid(row=6, column=1, pady=10, padx=0.5)
 
 def run_check():
     fb.check_sd_tags(content)
-    file_name = customtkinter.CTkLabel(master=frame_1, text=f"Checking complete!\n Result_1 \n Result_2")
-    file_name.grid(row=3, column=0, pady=10, padx=0.5)
+    result_checking = customtkinter.CTkLabel(master=frame_1, text=f"Checking complete!\n Result_1 \n Result_2")
+    result_checking.grid(row=3, column=0, pady=10, padx=0.5)
     return
 
 def run_fill():
+    result_filling = customtkinter.CTkLabel(master=app, text=f"")
+    result_filling.grid(row=6, column=1, pady=10, padx=0.5)
     fb.fill_support_tags(content)
-    file_name = customtkinter.CTkLabel(master=frame_1, text=f"Filling complete!\n Result_1 \n Result_2")
-    file_name.grid(row=3, column=0, pady=10, padx=0.5)
+    result_filling = customtkinter.CTkLabel(master=app, text=f"Filling complete!\n Result_1 \n Result_2")
+    result_filling.grid(row=6, column=1, pady=10, padx=0.5)
     return
 
-btn_check_tags = customtkinter.CTkButton(master=frame_1, command=run_check, text="Check tags")
-btn_check_tags.grid(row=3, column=0, pady=10, padx=1)
+def fill_support_tags_test():
+    acad = win32com.client.Dispatch("AutoCAD.Application")
 
-btn_fill_tags = customtkinter.CTkButton(master=frame_1, command=run_fill, text="Fill tags")
-btn_fill_tags.grid(row=3, column=1, pady=10, padx=1)
+    doc = acad.ActiveDocument  # Document object
+    print()
+    tag_list = fb.read_tags_pd(content)
+
+    progress = 0
+    for entity in acad.ActiveDocument.PaperSpace:
+        name = entity.EntityName
+
+        progress_percentage = f"{round(((progress / len(acad.ActiveDocument.PaperSpace)) * 100), 0)} %"
+        progress_bar = customtkinter.CTkLabel(master=app, text=f"{progress_percentage}")
+        progress_bar.grid(row=5, column=1, pady=10, padx=0.5)
+
+        progress += 1
+        if name == 'AcDbBlockReference':
+            HasAttributes = entity.HasAttributes
+            if HasAttributes:
+                # print(entity.Name)
+                # print(entity.Layer)
+                # print(entity.ObjectID)
+                support_tag = "n/a"
+                for attrib in entity.GetAttributes():
+                    # print("******")
+                    # print("  {}: {}".format(attrib.TagString, attrib.TextString))
+                    if "TAG" in attrib.TagString:
+                        # print("!!!!!tag ", attrib.TextString)
+                        support_tag = attrib.TextString.strip()
+                    # update text
+                    # if 'DRAWING' in attrib.TagString and "LATER" in attrib.TextString:
+                    if 'DRAWING' in attrib.TagString:
+                        # print(f"  --- {attrib.TextString}")
+                        try:
+                            attrib.TextString = tag_list[support_tag]
+                            attrib.Update()
+                        except Exception as e:
+                            print(e)
+                            pass
+    result_filling = customtkinter.CTkLabel(master=app, text=f"Filling SD-TAGs complete!")
+    result_filling.grid(row=6, column=1, pady=10, padx=0.5)
+    return
+
+
+def start_fill():
+    result_filling.destroy()
+    progress_bar.destroy()
+
+    btn_fill_tags.configure(state=tkinter.DISABLED)
+    thread = threading.Thread(target=fill_support_tags_test)
+    print(threading.main_thread().name)
+    print(thread.name)
+    thread.start()
+    check_thread(thread)
+    return
+
+def check_thread(thread):
+    if thread.is_alive():
+        app.after(100, lambda: check_thread(thread))
+    else:
+        print(thread.is_alive())
+        btn_fill_tags.configure(state=tkinter.NORMAL)
+
+
+btn_check_tags = customtkinter.CTkButton(master=app, command=run_check, text="Check tags")
+btn_check_tags.grid(row=4, column=1, pady=10, padx=0.1, sticky="w")
+
+btn_fill_tags = customtkinter.CTkButton(master=app, command=start_fill, text="Fill tags")
+btn_fill_tags.grid(row=5, column=1, pady=10, padx=0.1, sticky="w")
 
 
 

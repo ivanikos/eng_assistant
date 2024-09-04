@@ -16,8 +16,12 @@ def fill_support_tags(path):
     doc = acad.ActiveDocument  # Document object
 
     tag_list = read_tags_pd(path)
+
+    progress = 0
     for entity in acad.ActiveDocument.PaperSpace:
         name = entity.EntityName
+        # print(f"{round(((progress / len(acad.ActiveDocument.PaperSpace)) * 100), 2)} %")
+        progress += 1
         if name == 'AcDbBlockReference':
             HasAttributes = entity.HasAttributes
             if HasAttributes:
@@ -26,22 +30,21 @@ def fill_support_tags(path):
                 # print(entity.ObjectID)
                 support_tag = "n/a"
                 for attrib in entity.GetAttributes():
-                    print("******")
-                    print("  {}: {}".format(attrib.TagString, attrib.TextString))
+                    # print("******")
+                    # print("  {}: {}".format(attrib.TagString, attrib.TextString))
                     if "TAG" in attrib.TagString:
-                        print("!!!!!tag ", attrib.TextString)
+                        # print("!!!!!tag ", attrib.TextString)
                         support_tag = attrib.TextString.strip()
                     # update text
                     # if 'DRAWING' in attrib.TagString and "LATER" in attrib.TextString:
                     if 'DRAWING' in attrib.TagString:
-                        print(f"  --- {attrib.TextString}")
+                        # print(f"  --- {attrib.TextString}")
                         try:
                             attrib.TextString = tag_list[support_tag]
                             attrib.Update()
                         except Exception as e:
                             print(e)
                             pass
-
     return
 
 
@@ -90,4 +93,5 @@ def check_sd_tags(path):
     return
 
 
-fill_support_tags(r"C:/Users/vanik/PycharmProjects/cad_helper/54880-13 Williams Pipe Support List.xlsm")
+# fill_support_tags(r"C:/Users/vanik/PycharmProjects/cad_helper/54880-13 Williams Pipe Support List.xlsm")
+# fill_support_tags(r"C:/Users/ivaign/OneDrive - United Conveyor Corp/Documents/Python_Projects/cad_helper/54880-13 Williams Pipe Support List.xlsm")
