@@ -1,37 +1,25 @@
-from kivy.lang import Builder
-from kivy.uix.boxlayout import BoxLayout
-from kivy.properties import StringProperty
-from kivy.uix.bubble import Button
-from kivy.uix.textinput import TextInput
-from kivy.uix.label import Label
-from kivy.uix.gridlayout import GridLayout
-from kivy.app import App
+import random
+from tkinter import *
 
+base = Tk()
 
+a = Label(base, text="After() Demo")
+a.pack()
 
+contrive = Frame(base, width=450, height=500)
+contrive.pack()
 
+words = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri','Sat','Sun']
+#Display words randomly one after the other.
+def display_weekday():
+    if not words:
+        return
 
-class LoginScreen(GridLayout):
+    rand = random.choice(words)
+    character_frame = Label(contrive, text=rand)
+    character_frame.pack()
+    contrive.after(500,display_weekday)
+    words.remove(rand)
 
-    def __init__(self, **kwargs):
-        super(LoginScreen, self).__init__(**kwargs)
-        self.add_widget(Label(text='User Name'))
-        self.username = TextInput(multiline=False)
-        self.add_widget(self.username)
-        self.add_widget(Label(text='password'))
-        self.password = TextInput(password=True, multiline=False)
-        self.add_widget(self.password)
-        self.button_1 = Button(text="Button1")
-        self.add_widget(self.button_1)
-
-
-class MyApp(App):
-
-    def build(self):
-        return LoginScreen()
-
-
-if __name__ == '__main__':
-    MyApp().run()
-
-
+base.after(0, display_weekday)
+base.mainloop()

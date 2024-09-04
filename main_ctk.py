@@ -3,7 +3,7 @@ import tkinter.messagebox
 import customtkinter
 import tkinterDnD
 from tkinter.filedialog import askopenfile
-
+import fill_block as fb
 from PIL.ImageOps import expand
 
 customtkinter.set_ctk_parent_class(tkinterDnD.Tk)
@@ -14,7 +14,7 @@ customtkinter.set_default_color_theme("blue")  # Themes: "blue" (standard), "gre
 app = customtkinter.CTk()
 app.geometry("900x300")
 app.title("a_acad v.0.001 (temp)")
-app.resizable(width=False, height=False)
+# app.resizable(width=False, height=False)
 
 print(type(app), isinstance(app, tkinterDnD.Tk))
 
@@ -32,6 +32,8 @@ def open_file():
     if file is not None:
         content = file.name
         print(content)
+        file_name = customtkinter.CTkLabel(master=frame_1, text=f"{content}")
+        file_name.grid(row=2, column=0, pady=10, padx=0.5)
     return content
 
 
@@ -46,7 +48,7 @@ side_label.pack(pady=10, padx=10, anchor="w")
 btn_filler = customtkinter.CTkButton(master=side_frame, command=button_callback, text="Block check")
 btn_filler.pack(pady=2, padx=2)
 
-btn_exj_chart = customtkinter.CTkButton(master=side_frame, command=btn_exj_callback,text="EXJ chart")
+btn_exj_chart = customtkinter.CTkButton(master=side_frame, command=btn_exj_callback, text="EXJ chart")
 btn_exj_chart.pack(pady=4, padx=2)
 
 
@@ -64,11 +66,29 @@ browse_button.grid(row=2, column=2, padx=(20, 20), pady=(20, 20), sticky="nsew")
 file_name = customtkinter.CTkLabel(master=frame_1, text=f"{content}")
 file_name.grid(row=2, column=0, pady=10, padx=1)
 
-btn_check_tags = customtkinter.CTkButton(master=frame_1, command=btn_exj_callback,text="Check tags")
+
+
+def run_check():
+    fb.check_sd_tags(content)
+    file_name = customtkinter.CTkLabel(master=frame_1, text=f"Checking complete!\n Result_1 \n Result_2")
+    file_name.grid(row=3, column=0, pady=10, padx=0.5)
+    return
+
+def run_fill():
+    fb.fill_support_tags(content)
+    file_name = customtkinter.CTkLabel(master=frame_1, text=f"Filling complete!\n Result_1 \n Result_2")
+    file_name.grid(row=3, column=0, pady=10, padx=0.5)
+    return
+
+btn_check_tags = customtkinter.CTkButton(master=frame_1, command=run_check, text="Check tags")
 btn_check_tags.grid(row=3, column=0, pady=10, padx=1)
 
-btn_fill_tags = customtkinter.CTkButton(master=frame_1, command=btn_exj_callback,text="Fill tags")
+btn_fill_tags = customtkinter.CTkButton(master=frame_1, command=run_fill, text="Fill tags")
 btn_fill_tags.grid(row=3, column=1, pady=10, padx=1)
+
+
+
+
 
 
 # progressbar_1 = customtkinter.CTkProgressBar(master=frame_1)

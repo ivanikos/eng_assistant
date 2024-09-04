@@ -28,12 +28,9 @@ def fill_support_tags(path):
                 for attrib in entity.GetAttributes():
                     print("******")
                     print("  {}: {}".format(attrib.TagString, attrib.TextString))
-                    print("******")
-
                     if "TAG" in attrib.TagString:
                         print("!!!!!tag ", attrib.TextString)
                         support_tag = attrib.TextString.strip()
-                        # print("sd ", support_tag)
                     # update text
                     # if 'DRAWING' in attrib.TagString and "LATER" in attrib.TextString:
                     if 'DRAWING' in attrib.TagString:
@@ -43,7 +40,10 @@ def fill_support_tags(path):
                             attrib.Update()
                         except Exception as e:
                             print(e)
-                        continue
+                            pass
+
+    return
+
 
 def check_sd_tags(path):
     acad = win32com.client.Dispatch("AutoCAD.Application")
@@ -73,7 +73,7 @@ def check_sd_tags(path):
                             if tag_list[support_tag] and attrib.TextString == "LATER":
                                 print(f"{attrib.TextString, tag_list[support_tag]}  - possible to fill")
                             else:
-                                if str(attrib.TextString).strip() ==  tag_list[support_tag].strip():
+                                if str(attrib.TextString).strip() == tag_list[support_tag].strip():
                                     # print(f"Load tag - {attrib.TagString} \n "
                                     #       f"SD-tag - {tag_list[support_tag]} \n"
                                     #       f"OK \n")
@@ -85,16 +85,9 @@ def check_sd_tags(path):
 
                         except:
                             print(f"{attrib.TagString} -- {attrib.TextString} -- WRONG TAG")
+                            pass
+
+    return
 
 
-                        continue
-
-
-
-
-
-
-
-
-
-
+fill_support_tags(r"C:/Users/vanik/PycharmProjects/cad_helper/54880-13 Williams Pipe Support List.xlsm")
