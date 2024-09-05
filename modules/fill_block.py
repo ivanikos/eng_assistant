@@ -1,5 +1,5 @@
 import win32com.client
-from read_tag_list import read_tag_list, read_tags_pd
+from modules import read_tag_list as rtl
 
 
 # tag_list = {"C100310": "SD-111", "C100300": "SD-321", "C100290": "SD-222", "n/a": "LATER1", "P800100": "success"}
@@ -15,7 +15,7 @@ def fill_support_tags(path):
 
     doc = acad.ActiveDocument  # Document object
 
-    tag_list = read_tags_pd(path)
+    tag_list = rtl.read_tags_pd(path)
 
     progress = 0
     for entity in acad.ActiveDocument.PaperSpace:
@@ -53,7 +53,7 @@ def check_sd_tags(path):
 
     doc = acad.ActiveDocument  # Document object
 
-    tag_list = read_tags_pd(path)
+    tag_list = rtl.read_tags_pd(path)
     for entity in acad.ActiveDocument.PaperSpace:
         name = entity.EntityName
         if name == 'AcDbBlockReference':

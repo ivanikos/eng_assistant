@@ -1,3 +1,8 @@
+# import sys, io
+#
+# buffer = io.StringIO()
+# sys.stdout = sys.stderr = buffer
+
 import tkinter
 import tkinter.messagebox
 import customtkinter
@@ -7,8 +12,7 @@ from tkinter.filedialog import askopenfile
 
 import win32com.client
 
-import fill_block as fb
-from PIL.ImageOps import expand
+from modules import fill_block as fb
 
 customtkinter.set_ctk_parent_class(tkinterDnD.Tk)
 
@@ -20,7 +24,7 @@ app.geometry("800x350")
 app.title("a_acad v.0.001 (temp)")
 # app.resizable(width=False, height=False)
 
-print(type(app), isinstance(app, tkinterDnD.Tk))
+# print(type(app), isinstance(app, tkinterDnD.Tk))
 
 def button_callback():
     print("Button click", btn_filler._text)
@@ -93,7 +97,6 @@ def fill_support_tags_test():
     acad = win32com.client.Dispatch("AutoCAD.Application")
 
     doc = acad.ActiveDocument  # Document object
-    print()
     tag_list = fb.read_tags_pd(content)
 
     progress = 0

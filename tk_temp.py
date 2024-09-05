@@ -1,11 +1,6 @@
 import tkinter as tk
-from tabnanny import check
-from tkinter.constants import CENTER
-from tkinter.ttk import Label, Entry
+from tkinter.ttk import Label
 from tkinter.filedialog import askopenfile
-
-import fill_block as fb
-
 
 window = tk.Tk()
 window.title('a_acad v.0.001 (temp)')
