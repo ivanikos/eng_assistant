@@ -1,0 +1,21 @@
+#"""C:\Users\ivaign\OneDrive - United Conveyor Corp\Documents>python -m py_try"""
+
+
+ think you could use pip install pypiwin32 instead.
+
+sudo pip install --no-cache-dir
+
+c:\users\ivaign\appdata\local\packages\pythonsoftwarefoundation.python.3.12_qbz5n2kfra8p0\localcache\local-packages\python312\site-packages
+
+
+python -m pip install --trusted-host pypi.python.org --trusted-host files.pythonhosted.org --trusted-host pypi.org --trusted-host files.pythonhosted.org pip YOUR-PACKAGE
+
+go to exe:
+C:\Users\ivaign\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.12_qbz5n2kfra8p0\LocalCache\local-packages\Python312\Scripts\pyinstaller.exe main_ctk.py
+
+python -m PyInstaller -w --onefile --add-data "C:\Users\ivaign\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.12_qbz5n2kfra8p0\LocalCache\local-packages\Python312\site-packages\tkinterDnD:tknd" main_ctk.py
+
+
+
+WORKS!!! 09/05/24
+python -m PyInstaller -w --onefile --add-data "C:\Users\ivaign\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.12_qbz5n2kfra8p0\LocalCache\local-packages\Python312\site-packages\tkinterdnd2:tkinterdnd2" main_ctk.py

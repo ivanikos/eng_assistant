@@ -109,6 +109,13 @@ def check_sd_tags(path):
 
     return
 
+space_text = ("                                                                       \n"
+              "                                                                       \n"
+              "                                                                       \n"
+              "                                                                       \n"
+              "                                                                       \n"
+              "                                                                       \n"
+              "                                                                       \n")
 
 # fill_support_tags(r"C:/Users/vanik/PycharmProjects/cad_helper/54880-13 Williams Pipe Support List.xlsm")
 # fill_support_tags(r"C:/Users/ivaign/OneDrive - United Conveyor Corp/Documents/Python_Projects/cad_helper/54880-13 Williams Pipe Support List.xlsm")
