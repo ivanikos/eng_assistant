@@ -1,5 +1,6 @@
 import win32com.client
-from modules import read_tag_list as rtl
+import pandas as pd
+# from modules import read_tag_list as rtl
 
 
 # tag_list = {"C100310": "SD-111", "C100300": "SD-321", "C100290": "SD-222", "n/a": "LATER1", "P800100": "success"}
@@ -10,12 +11,28 @@ from modules import read_tag_list as rtl
 # iterate through all objects (entities) in the currently opened drawing
 # and if it's a BlockReference, display its attributes and some other things.
 
+def read_tags_pd(path_tag_list_pd):
+    tag_list = {}
+    df = pd.read_excel(path_tag_list_pd, usecols=[2, 5, 11], sheet_name="Support Tags", header=7)
+
+    for row in df.values:
+        if row[0] != "nan" or "n":
+            load_tag = row[0]
+            project_number = str(row[1])[2: 10]
+            sd_tag = str(row[2]).replace(f"-{project_number}", "")
+
+            tag_list[load_tag] = sd_tag
+            # print(project_number, load_tag, sd_tag)
+        else:
+            break
+    return tag_list
+
 def fill_support_tags(path):
     acad = win32com.client.Dispatch("AutoCAD.Application")
 
     doc = acad.ActiveDocument  # Document object
 
-    tag_list = rtl.read_tags_pd(path)
+    tag_list = read_tags_pd(path)
 
     progress = 0
     for entity in acad.ActiveDocument.PaperSpace:
@@ -53,7 +70,7 @@ def check_sd_tags(path):
 
     doc = acad.ActiveDocument  # Document object
 
-    tag_list = rtl.read_tags_pd(path)
+    tag_list = read_tags_pd(path)
     for entity in acad.ActiveDocument.PaperSpace:
         name = entity.EntityName
         if name == 'AcDbBlockReference':
