@@ -23,7 +23,7 @@ customtkinter.set_appearance_mode("dark")  # Modes: "System" (standard), "Dark",
 customtkinter.set_default_color_theme("blue")  # Themes: "blue" (standard), "green", "dark-blue"
 
 app = customtkinter.CTk()
-app.geometry("800x400")
+app.geometry("800x530")
 app.title("EAssist v.0.001 (temp)")
 # app.resizable(width=False, height=False)
 
@@ -90,7 +90,7 @@ btn_exj_chart.pack(pady=4, padx=2)
 frame_1 = customtkinter.CTkFrame(master=app, width=120, corner_radius=10)
 frame_1.grid(row=0, column=1, rowspan=4, sticky="nsew", pady=20, padx=5)
 
-label_1 = customtkinter.CTkLabel(master=frame_1, text="Choose support tag list file:", anchor="w",
+label_1 = customtkinter.CTkLabel(master=frame_1, text="Choose Pipe Support List for project:", anchor="w",
                                     font=customtkinter.CTkFont(size=20, weight="bold"))
 label_1.grid(pady=10, padx=10, sticky="nsew")
 
@@ -111,6 +111,10 @@ progress_bar_checking.grid(row=5, column=1, pady=0.2, padx=0.5)
 result_checking = customtkinter.CTkLabel(master=app, text=f"")
 result_checking.grid(row=6, column=1, pady=0.2, padx=0.5)
 
+text_1 = customtkinter.CTkTextbox(master=app, width=600, height=170)
+text_1.grid(row=6, column=1, pady=2, padx=0.5)
+text_1.insert("0.0", f"DETAILS:")
+
 def check_load_sd_tags():
     correct_tags = []
     wrong_load_tags = []
@@ -119,10 +123,15 @@ def check_load_sd_tags():
     waiting_load_tag = []
     waiting_sd_tag = []
 
+
     progress_bar_checking = customtkinter.CTkLabel(master=app, text=f"{fb.space_text}")
     progress_bar_checking.grid(row=5, column=1, pady=0.2, padx=0.5)
     result_checking = customtkinter.CTkLabel(master=app, text=f"{fb.space_text}")
     result_checking.grid(row=5, column=1, pady=2, padx=0.5)
+
+    text_1 = customtkinter.CTkTextbox(master=app, width=600, height=170)
+    text_1.grid(row=6, column=1, pady=2, padx=0.5)
+    text_1.insert("0.0", f"{fb.space_text}")
 
     acad = win32com.client.Dispatch("AutoCAD.Application")
     doc = acad.ActiveDocument  # Document object
@@ -167,7 +176,8 @@ def check_load_sd_tags():
                                     if tag_list[load_tag].strip() == sd_tag.strip():
                                         correct_tags.append(f"{load_tag} - {sd_tag} - correct")
                                     else:
-                                        wrong_sd_tags.append(f"{load_tag} - {sd_tag} - INcorrect")
+                                        wrong_sd_tags.append(f"{load_tag} - {sd_tag} - INcorrect - should "
+                                                             f"be - {tag_list[load_tag]}")
                                 else:
                                     print(f"ELSE - {load_tag} - {sd_tag}")
                             elif load_tag in tag_list.keys() and not tag_list[load_tag]:
@@ -178,7 +188,6 @@ def check_load_sd_tags():
                             print(e)
                             # print(f"{attrib.TagString} -- {attrib.TextString} -- WRONG TAG")
 
-    app.geometry("800x530")
     result_checking = customtkinter.CTkLabel(master=app, text=f"Checking SD-TAGs complete! \n"
                                                               f"Correct tags - {len(correct_tags)}\n"
                                                               f"Possible to fill SD - {len(possible_to_fill)}\n"
@@ -223,8 +232,8 @@ def check_load_sd_tags():
             detail_res = detail_res + f"{i}, \n"
 
 
-    text_1 = customtkinter.CTkTextbox(master=app, width=600, height=170)
-    text_1.grid(row=6, column=1, pady=2, padx=0.5)
+    # text_1 = customtkinter.CTkTextbox(master=app, width=600, height=170)
+    # text_1.grid(row=6, column=1, pady=2, padx=0.5)
     text_1.insert("0.0", f"{detail_res}")
 
     print("correct tags - ", correct_tags)
@@ -237,6 +246,7 @@ def check_load_sd_tags():
 def start_checking():
     result_filling.destroy()
     progress_bar.destroy()
+    text_1.destroy()
 
     btn_check_tags.configure(state=tkinter.DISABLED)
     thread = threading.Thread(target=check_load_sd_tags)
@@ -247,15 +257,28 @@ def start_checking():
     return
 
 def fill_sd_tags():
+    filled_tags = []
+    wrong_load_tags = []
+    left_tags = []
+
+
     progress_bar = customtkinter.CTkLabel(master=app, text=f"{fb.space_text}")
     progress_bar.grid(row=5, column=1, pady=0.2, padx=0.5)
     result_filling = customtkinter.CTkLabel(master=app, text=f"{fb.space_text}")
     result_filling.grid(row=5, column=1, pady=2, padx=0.5)
 
+    text_1 = customtkinter.CTkTextbox(master=app, width=600, height=170)
+    text_1.grid(row=6, column=1, pady=2, padx=0.5)
+    text_1.insert("0.0", f"{fb.space_text}")
+
     acad = win32com.client.Dispatch("AutoCAD.Application")
 
     doc = acad.ActiveDocument  # Document object
     tag_list = read_tags_pd(content)
+
+    # text_1 = customtkinter.CTkTextbox(master=app, width=600, height=170)
+    # text_1.grid(row=6, column=1, pady=2, padx=0.5)
+    # text_1.insert("0.0", f"\n\n\n\n\n\n\n\n")
 
     progress = 0
     for entity in acad.ActiveDocument.PaperSpace:
@@ -269,28 +292,57 @@ def fill_sd_tags():
         if name == 'AcDbBlockReference':
             HasAttributes = entity.HasAttributes
             if HasAttributes:
-                support_tag = "n/a"
+                load_tag = "n/a"
                 for attrib in entity.GetAttributes():
                     if "TAG" in attrib.TagString:
                         # print("!!!!!tag ", attrib.TextString)
-                        support_tag = attrib.TextString.strip()
+                        load_tag = attrib.TextString.strip()
                     # update text
                     # if 'DRAWING' in attrib.TagString and "LATER" in attrib.TextString:
                     if 'DRAWING' in attrib.TagString:
                         # print(f"  --- {attrib.TextString}")
+                        if load_tag not in tag_list.keys():
+                            wrong_load_tags.append(f"{load_tag} - wrong load_tag")
                         try:
-                            if tag_list[support_tag] != "nan" and tag_list[support_tag]:
-                                attrib.TextString = tag_list[support_tag]
+                            if tag_list[load_tag] != "nan" and tag_list[load_tag]:
+                                attrib.TextString = tag_list[load_tag]
                                 attrib.Update()
+                                filled_tags.append(f"{load_tag} - {tag_list[load_tag]} - OK")
+                            else:
+                                left_tags.append(f"{load_tag} - waiting sd-tag")
                         except Exception as e:
                             print(e)
                             pass
     result_filling = customtkinter.CTkLabel(master=app, text=f"Filling SD-TAGs complete!")
     result_filling.grid(row=5, column=1, pady=2, padx=0.5)
+
+    # summarize detail result text
+    detail_res = "DETAIL FILLING RESULT:\n"
+
+    if left_tags:
+        detail_res += "\nNOT filled tags: \n"
+        for i in left_tags:
+            detail_res = detail_res + f"{i}, \n"
+
+    if wrong_load_tags:
+        detail_res += "\nWrong load tags: \n"
+        for i in wrong_load_tags:
+            detail_res = detail_res + f"{i}, \n"
+
+    # if filled_tags:
+    #     detail_res += "\nFilled tags: \n"
+    #     for i in filled_tags:
+    #         detail_res = detail_res + f"{i}, \n"
+
+    # text_1 = customtkinter.CTkTextbox(master=app, width=600, height=170)
+    # text_1.grid(row=6, column=1, pady=2, padx=0.5)
+    text_1.insert("0.0", f"{detail_res}")
     return
+
 def start_fill():
     result_filling.destroy()
     progress_bar.destroy()
+    text_1.destroy()
 
     btn_fill_tags.configure(state=tkinter.DISABLED)
     thread = threading.Thread(target=fill_sd_tags)
