@@ -6,6 +6,7 @@
 import tkinter
 import tkinter.messagebox
 from inspect import CORO_RUNNING
+from itertools import count
 
 import customtkinter
 import tkinterdnd2
@@ -170,7 +171,7 @@ def check_load_sd_tags():
                                 waiting_load_tag.append(f"{load_tag} - {sd_tag}")
                             elif load_tag in tag_list.keys() and tag_list[load_tag]:
                                 if tag_list[load_tag] and sd_tag == "LATER":
-                                    possible_to_fill.append(f"{load_tag} - {sd_tag} - "
+                                    possible_to_fill.append(f"{load_tag} - {sd_tag} - Should be - "
                                                                 f"{tag_list[load_tag]}")
                                 elif tag_list[load_tag] and sd_tag != "LATER":
                                     if tag_list[load_tag].strip() == sd_tag.strip():
@@ -183,28 +184,38 @@ def check_load_sd_tags():
                             elif load_tag in tag_list.keys() and not tag_list[load_tag]:
                                 waiting_sd_tag.append(f"{load_tag} - {sd_tag} - wait sd-tag")
                             else:
-                                wrong_load_tags.append(f"{load_tag} - {sd_tag} - need to double check")
+                                wrong_load_tags.append(f"{load_tag} - {sd_tag} - need to double check LOAD TAG")
                         except Exception as e:
                             print(e)
                             # print(f"{attrib.TagString} -- {attrib.TextString} -- WRONG TAG")
 
     result_checking = customtkinter.CTkLabel(master=app, text=f"Checking SD-TAGs complete! \n"
-                                                              f"Correct tags - {len(correct_tags)}\n"
-                                                              f"Possible to fill SD - {len(possible_to_fill)}\n"
+                                                              f"Correct load + SD-tags - {len(correct_tags)}\n"
+                                                              f"Possible to fill SD-tags - {len(possible_to_fill)}\n"
                                                               f"Waiting for load tags - {len(waiting_load_tag)}\n"
-                                                              f"Waiting for sd tags - {len(waiting_sd_tag)}\n"
+                                                              f"Waiting for SD-tags - {len(waiting_sd_tag)}\n"
                                                               f"Wrong load tags - {len(wrong_load_tags)}\n"
-                                                              f"Wrong sd tags - {len(wrong_sd_tags)}")
+                                                              f"Wrong SD-tags - {len(wrong_sd_tags)}")
     result_checking.grid(row=5, column=1, pady=2, padx=0.5)
 
 
     # summarize detail result text
     detail_res = "DETAIL CHECKING RESULT:\n"
 
-    if correct_tags:
-        detail_res += "\nCorrect tags: \n"
-        for i in correct_tags:
+    if wrong_load_tags:
+        detail_res += "\nWrong load tags: \n"
+        for i in wrong_load_tags:
             detail_res = detail_res + f"{i}, \n"
+
+    if wrong_sd_tags:
+        detail_res += "\nWrong SD-tags: \n"
+        for i in wrong_sd_tags:
+            detail_res = detail_res + f"{i}, \n"
+
+    # if correct_tags:
+    #     detail_res += "\nCorrect tags: \n"
+    #     for i in correct_tags:
+    #         detail_res = detail_res + f"{i}, \n"
 
     if possible_to_fill:
         detail_res += "\nPossible to fill tags: \n"
@@ -221,15 +232,7 @@ def check_load_sd_tags():
         for i in waiting_sd_tag:
             detail_res = detail_res + f"{i}, \n"
 
-    if wrong_load_tags:
-        detail_res += "\nWrong load tags: \n"
-        for i in wrong_load_tags:
-            detail_res = detail_res + f"{i}, \n"
 
-    if wrong_sd_tags:
-        detail_res += "\nWrong sd tags: \n"
-        for i in wrong_sd_tags:
-            detail_res = detail_res + f"{i}, \n"
 
 
     # text_1 = customtkinter.CTkTextbox(master=app, width=600, height=170)
@@ -289,6 +292,7 @@ def fill_sd_tags():
         progress_bar.grid(row=5, column=1, pady=10, padx=0.5)
 
         progress += 1
+        count_filled_tags = 0
         if name == 'AcDbBlockReference':
             HasAttributes = entity.HasAttributes
             if HasAttributes:
@@ -308,12 +312,14 @@ def fill_sd_tags():
                                 attrib.TextString = tag_list[load_tag]
                                 attrib.Update()
                                 filled_tags.append(f"{load_tag} - {tag_list[load_tag]} - OK")
+                                count_filled_tags += 1
                             else:
                                 left_tags.append(f"{load_tag} - waiting sd-tag")
                         except Exception as e:
                             print(e)
                             pass
-    result_filling = customtkinter.CTkLabel(master=app, text=f"Filling SD-TAGs complete!")
+    result_filling = customtkinter.CTkLabel(master=app, text=f"Filling SD-TAGs complete! \n"
+                                                             f"filled - {count_filled_tags} SD-tags.")
     result_filling.grid(row=5, column=1, pady=2, padx=0.5)
 
     # summarize detail result text
