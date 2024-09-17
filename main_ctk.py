@@ -138,9 +138,15 @@ def check_load_sd_tags():
     doc = acad.ActiveDocument  # Document object
     tag_list = read_tags_pd(content)
 
+    print("Paperspace - ",len(acad.ActiveDocument.PaperSpace))
+
     progress = 0
+
+    print("Blocks - ", len(doc.Blocks))
+
     for entity in acad.ActiveDocument.PaperSpace:
         name = entity.EntityName
+        print(name)
 
         progress_percentage = f"{round(((progress / len(acad.ActiveDocument.PaperSpace)) * 100), 0)} %"
         progress_bar_checking = customtkinter.CTkLabel(master=app, text=f"{progress_percentage}")
@@ -171,14 +177,14 @@ def check_load_sd_tags():
                                 waiting_load_tag.append(f"{load_tag} - {sd_tag}")
                             elif load_tag in tag_list.keys() and tag_list[load_tag]:
                                 if tag_list[load_tag] and sd_tag == "LATER":
-                                    possible_to_fill.append(f"{load_tag} - {sd_tag} - Should be - "
+                                    possible_to_fill.append(f"{load_tag} - {sd_tag} - in the support list - "
                                                                 f"{tag_list[load_tag]}")
                                 elif tag_list[load_tag] and sd_tag != "LATER":
                                     if tag_list[load_tag].strip() == sd_tag.strip():
                                         correct_tags.append(f"{load_tag} - {sd_tag} - correct")
                                     else:
-                                        wrong_sd_tags.append(f"{load_tag} - {sd_tag} - INcorrect - should "
-                                                             f"be - {tag_list[load_tag]}")
+                                        wrong_sd_tags.append(f"{load_tag} - {sd_tag} - INcorrect - in the support list "
+                                                             f"- {tag_list[load_tag]}")
                                 else:
                                     print(f"ELSE - {load_tag} - {sd_tag}")
                             elif load_tag in tag_list.keys() and not tag_list[load_tag]:
@@ -188,6 +194,8 @@ def check_load_sd_tags():
                         except Exception as e:
                             print(e)
                             # print(f"{attrib.TagString} -- {attrib.TextString} -- WRONG TAG")
+        else:
+            continue
 
     result_checking = customtkinter.CTkLabel(master=app, text=f"Checking SD-TAGs complete! \n"
                                                               f"Correct load + SD-tags - {len(correct_tags)}\n"
@@ -319,7 +327,7 @@ def fill_sd_tags():
                             print(e)
                             pass
     result_filling = customtkinter.CTkLabel(master=app, text=f"Filling SD-TAGs complete! \n"
-                                                             f"filled - {count_filled_tags} SD-tags.")
+                                                             f"filled - {len(filled_tags)} SD-tags.")
     result_filling.grid(row=5, column=1, pady=2, padx=0.5)
 
     # summarize detail result text
@@ -344,7 +352,6 @@ def fill_sd_tags():
     # text_1.grid(row=6, column=1, pady=2, padx=0.5)
     text_1.insert("0.0", f"{detail_res}")
     return
-
 def start_fill():
     result_filling.destroy()
     progress_bar.destroy()
@@ -357,7 +364,6 @@ def start_fill():
     thread.start()
     check_thread(thread)
     return
-
 
 def check_thread(thread):
     if thread.is_alive():
