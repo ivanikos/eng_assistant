@@ -146,7 +146,6 @@ def check_load_sd_tags():
 
     for entity in acad.ActiveDocument.PaperSpace:
         name = entity.EntityName
-        print(name)
 
         progress_percentage = f"{round(((progress / len(acad.ActiveDocument.PaperSpace)) * 100), 0)} %"
         progress_bar_checking = customtkinter.CTkLabel(master=app, text=f"{progress_percentage}")
