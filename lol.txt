@@ -10,6 +10,8 @@ c:\users\ivaign\appdata\local\packages\pythonsoftwarefoundation.python.3.12_qbz5
 
 python -m pip install --trusted-host pypi.python.org --trusted-host files.pythonhosted.org --trusted-host pypi.org --trusted-host files.pythonhosted.org pip YOUR-PACKAGE
 
+python -m pip install --no-cache-dir --user --trusted-host pypi.python.org --trusted-host files.pythonhosted.org --trusted-host pypi.org --trusted-host files.pythonhosted.org _____
+
 go to exe:
 C:\Users\ivaign\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.12_qbz5n2kfra8p0\LocalCache\local-packages\Python312\Scripts\pyinstaller.exe main_ctk.py
 
