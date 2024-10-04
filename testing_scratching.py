@@ -71,3 +71,25 @@ for entity in acad.ActiveDocument.PaperSpace:
 
 
 
+
+"""
+from pyautocad import Autocad, APoint
+
+# Create an instance of AutoCAD
+acad = Autocad(create_if_not_exists=True)
+
+# Parameters for the cloud circle
+cloud_radius = 10  # Radius of the cloud circle
+
+# Iterate through all objects in the active document
+for entity in acad.iter_objects("AcDbBlockReference"):
+    # Get the insertion point of the block
+    insertion_point = entity.InsertionPoint
+    center = APoint(insertion_point)  # Convert to APoint
+
+    # Draw a circle around the block's insertion point
+    circle = acad.model.AddCircle(center, cloud_radius)
+    print(f"Circle drawn around block '{entity.Name}' at {insertion_point}")
+
+
+"""
