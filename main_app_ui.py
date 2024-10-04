@@ -24,7 +24,7 @@ customtkinter.set_default_color_theme("blue")  # Themes: "blue" (standard), "gre
 app = customtkinter.CTk()
 app.geometry("800x530")
 app.title("Pipe Support Verifier v.0.02 (alpha testing)")
-
+app.grid_columnconfigure(1, weight=1)
 
 """Browse file dialog"""
 content = "Choose tag-list..."
@@ -73,9 +73,7 @@ progress_bar_checking.grid(row=5, column=1, pady=0.2, padx=0.5)
 result_checking = customtkinter.CTkLabel(master=app, text=f"")
 result_checking.grid(row=6, column=1, pady=0.2, padx=0.5)
 
-text_1 = customtkinter.CTkTextbox(master=app, width=600, height=170)
-text_1.grid(row=6, column=1, pady=2, padx=0.5)
-text_1.insert("0.0", f"DETAILS:")
+
 
 def check_load_sd_tags():
     correct_tags = []
@@ -338,21 +336,22 @@ def check_thread(thread):
 
 
 btn_check_tags = customtkinter.CTkButton(master=app, command=start_checking, text="Check tags")
-btn_check_tags.grid(row=4, column=1, pady=10, padx=50, sticky="w")
+btn_check_tags.grid(row=4, column=1, padx=50, sticky="w")
 
 btn_fill_tags = customtkinter.CTkButton(master=app, command=start_fill, text="Fill tags")
-btn_fill_tags.grid(row=4, column=1, pady=10, padx=260, sticky="w")
+btn_fill_tags.grid(row=5, column=1, padx=50, sticky="w")
 
 # Add a checkbox
 rev_circle_check_box = customtkinter.BooleanVar(value=True)  # Variable to track checkbox state
 checkbox = customtkinter.CTkCheckBox(app, text="Draw a marker on changed tags", variable=rev_circle_check_box)
-checkbox.grid(row=4, column=1, pady=10, padx=450, sticky="w")
+checkbox.grid(row=5, column=1, pady=1, padx=200, sticky="w")
 # Trace changes on the checkbox
 rev_circle_check_box.trace("w", checkbox_changed)
 
-print()
 
-
+text_1 = customtkinter.CTkTextbox(master=app, width=600, height=170)
+text_1.grid(row=6, column=1, pady=2, padx=20, sticky="nsew")
+text_1.insert("0.0", f"DETAILS:")
 
 
 app.mainloop()
