@@ -1,87 +1,73 @@
-from itertools import count
-
+# from pyautocad import Autocad, APoint
 import win32com.client
-import pyautocad
-from comtypes.client import *
-from comtypes.automation import *
-from fontTools.unicodedata import block
+import math
+from array import array
 
-# comtypes.automation._vartype_to_ctype[9] = comtypes.automation.VARIANT
-from pyautocad import Autocad
 
-# acad = Autocad(create_if_not_exists=True)
-# doc = acad.ActiveDocument
-# print(doc.name)
-#
+
 acad = win32com.client.Dispatch("AutoCAD.Application")
+print(acad.FullName)
+
+print(acad)
+
 doc = acad.ActiveDocument  # Document object
-print(doc.name)
+space = doc.PaperSpace
+print("Paperspace - ",len(acad.ActiveDocument.PaperSpace))
+print("Blocks - ", len(doc.Blocks))
 
-needed_blocks = []
-
-# print("Paperspace - ",len(doc.PaperSpace))
-# print("blocks - ", len(doc.Blocks))
-process = 0
-
-def get_id():
-    acad = Autocad(create_if_not_exists=True)
-    doc = acad.ActiveDocument
-
-    for block in acad.iter_objects('AcDbBlockReference', dont_cast=True):
-    # process = len(doc.Blocks)
-    # for block in doc.Blocks:
-        # print(block.InsertionPoint)
-        # print(block.Layer)
-        print("NAME - ", block.Name)
-        print("Handle - ", block.Handle)
-        print("ObjectID - ", block.ObjectID)
-        # print(dir(block))
-
-        needed_blocks.append(block.Handle)
-
-        # process += 1
-        # print(process)
+# Parameters for cloud (number of bumps and size)
+num_bumps = 8  # Number of arcs to form the cloud
+cloud_radius = 10  # Radius of the cloud from the insertion point
 
 
-        # try:
-        #     print(block.Layer)
-        #     print(block.Name)
-        # except:
-        #     pass
+# Function to create a circular cloud shape around a given point
+def draw_cloud(center, radius, num_bumps):
+    angle_step = 2 * math.pi / num_bumps
+    points = []
 
-        #
-        # if block.Layer == "SUPPORT_TAGS":
-        #     # print(block.Name, "!!!")
-        #     # print(block.InsertionPoint)
-        #     # print(block.ObjectName)
-        #     # print(block.ObjectID)
-        #     print(block.Handle)
-        #     needed_blocks.append(block.Handle)
-        # else:
-        #     continue
-    return needed_blocks
-get_id()
+    # Calculate the points for each bump on the cloud
+    for i in range(num_bumps + 1):  # +1 to close the loop
+        angle = i * angle_step
+        x = center[0] + radius * math.cos(angle)
+        y = center[1] + radius * math.sin(angle)
+        z = center[2]  # Keep the Z coordinate constant
+        points.extend([x, y, z])  # Flatten the point coordinates
 
+    # Create a variant array for the polyline points
+    polyline_points = array('d', points)  # 'd' stands for double (floating point)
 
-
-
-# acad = win32com.client.Dispatch("AutoCAD.Application")
-# doc = acad.ActiveDocument  # Document object
-# print(doc.name)
-#
-# needed_blocks = get_id()
-# print("Needed block list - ", len(needed_blocks))
-#
-# for obj in needed_blocks:
-#     object = acad.ActiveDocument.HandleToObject(obj)
-#
-#     HasAttributes = object.HasAttributes
-#     if HasAttributes:
-#         for attrib in object.GetAttributes():
-#             print(attrib.TagString)
-#             print(attrib.TextString)
+    # Create a polyline in AutoCAD to form the cloud
+    polyline = space.AddPolyline(polyline_points)
+    polyline.Closed = True  # Close the polyline to make it a loop
 
 
+for entity in acad.ActiveDocument.PaperSpace:
+    name = entity.EntityName
+
+    if name == 'AcDbBlockReference':
+        HasAttributes = entity.HasAttributes
+        insertion_point = entity.InsertionPoint
+
+        center = (abs(float(insertion_point[0])), abs(float(insertion_point[1])), 0)  # (x, y, z)
+        circle = space.AddCircle(center, cloud_radius)
+
+        if HasAttributes:
+            for attrib in entity.GetAttributes():
+                if "DWGNO" in attrib.TagString:
+                    print(attrib.TextString.strip())
+
+                if "TAG" in attrib.TagString:
+                    print(attrib.TextString.strip())
+
+                if "DRAWING" in attrib.TagString and attrib.TextString:
+                    print(attrib.TextString.strip())
+
+
+
+
+
+
+            # draw_cloud(entity.InsertionPoint, 5, 10)
 
 
 
