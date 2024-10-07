@@ -1,4 +1,5 @@
 import pandas as pd
+from pyautocad import Autocad, APoint
 
 
 """Read the tag-list .xlsm/xlsx etc."""
@@ -25,3 +26,13 @@ def read_tags_pd(path_tag_list_pd):
         else:
             break
     return tag_list
+
+
+def draw_marker(center, radius, color=1):
+    acad_1 = Autocad(create_if_not_exists=True)
+    # Access the active document
+    doc_1 = acad_1.ActiveDocument
+
+    center_point = APoint(center[0], center[1], center[2])
+    circle = doc_1.PaperSpace.AddCircle(center_point, radius)
+    circle.Color = color
