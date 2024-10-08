@@ -2,7 +2,7 @@
 #
 # buffer = io.StringIO()
 # sys.stdout = sys.stderr = buffer
-
+import os
 import tkinter
 import tkinter.messagebox
 import customtkinter
@@ -49,7 +49,7 @@ def confirmation():
     else:
         return 0
 
-
+user_name = os.getlogin()
 frame_1 = customtkinter.CTkFrame(master=app, corner_radius=10)
 frame_1.grid(row=0, column=1, rowspan=4, sticky="nsew", pady=10, padx=10)
 
@@ -72,7 +72,7 @@ button_definition_label = customtkinter.CTkLabel(master=frame_2, justify='left',
                                                                   'pipe support list')
 button_definition_label.grid(row=4, column=0, pady=10, padx=30, sticky="w")
 
-progress_bar = customtkinter.CTkProgressBar(master=app, width=400)
+progress_bar = customtkinter.CTkProgressBar(master=app, width=200)
 progress_bar.set(0)
 progress_bar.grid_forget()
 
@@ -96,7 +96,7 @@ def check_load_sd_tags():
 
     print("Paperspace - ",len(acad.ActiveDocument.PaperSpace))
 
-    progress_bar.grid(row=8, column=1, pady=10, padx=10, sticky="e")
+    progress_bar.grid(row=8, column=1, pady=10, padx=10)
     progress_bar.set(0)
     progress = 0
     full_progress = len(acad.ActiveDocument.PaperSpace) - 1
@@ -236,7 +236,7 @@ def fill_sd_tags():
     draw_check_box = rev_circle_check_box.get()
 
     text_1 = customtkinter.CTkTextbox(master=app, width=600, height=170)
-    text_1.grid(row=7, column=1, pady=10, padx=10, sticky="nsew")
+    text_1.grid(row=7, column=1, pady=10, padx=10, sticky="n")
     text_1.insert("0.0", f"{fb.space_text}")
 
     acad = win32com.client.Dispatch("AutoCAD.Application")
@@ -245,7 +245,7 @@ def fill_sd_tags():
     doc_filename = doc.FullName
     tag_list = read_tags_pd(content)
 
-    progress_bar.grid(row=8, column=1, pady=10, padx=10, sticky="e")
+    progress_bar.grid(row=8, column=1, pady=10, padx=10)
     progress_bar.set(0)
     progress = 0
 
@@ -354,6 +354,10 @@ def export_to_xlsx(report):
 btn_export_report = customtkinter.CTkButton(master=app, command=export_to_xlsx, text="Export to .xlsx")
 btn_export_report.grid(row=8, column=1, padx=30, pady=10, sticky="nw")
 btn_export_report.configure(state=tkinter.DISABLED)
+
+user_name_ui = customtkinter.CTkLabel(master=app, text=f"User: {user_name}",
+                                      font=customtkinter.CTkFont(size=10, weight="bold"))
+user_name_ui.grid(row=8, column=1, padx=30, pady=10, sticky="se")
 
 btn_check_tags = customtkinter.CTkButton(master=frame_2, command=start_checking, text="Check tags")
 btn_check_tags.grid(row=5, column=0, padx=30, pady=10, sticky="w")
