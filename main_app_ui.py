@@ -12,8 +12,6 @@ from tkinter.filedialog import askopenfile
 from CTkMessagebox import CTkMessagebox
 
 import win32com.client
-import pandas as pd
-from pyexpat.errors import messages
 
 from modules import fill_block as fb
 from modules.logics import read_tags_pd
@@ -25,7 +23,7 @@ customtkinter.set_appearance_mode("dark")  # Modes: "System" (standard), "Dark",
 customtkinter.set_default_color_theme("blue")  # Themes: "blue" (standard), "green", "dark-blue"
 
 app = customtkinter.CTk()
-app.geometry("800x600")
+app.geometry("600x560")
 app.title("Pipe Support Verifier v.0.02 (alpha testing)")
 app.grid_columnconfigure(1, weight=1)
 
@@ -41,19 +39,19 @@ def open_file():
         file_name.grid(row=2, column=0, pady=10, padx=0.5)
     return content
 
-# temporary function. Will be eliminated in the future
-def checkbox_changed(*args):
-    # This function will be called whenever the checkbox state changes
-    if rev_circle_check_box.get():  # If the checkbox is checked
-        print("Checkbox is checked")
-        # Add logic for when the checkbox is checked
+def confirmation():
+    # res = tkinter.messagebox.askquestion("Fill tags", "Do you really want to fill all SD-tags?")
+    msg_box_confirmation = CTkMessagebox(title="Confirmation", message="Do you really want to fill all tags?",
+                                         option_1="Cancel", option_2="Yes")
+    user_response = msg_box_confirmation.get()
+    if user_response == "Yes":
+        return 1
     else:
-        print("Checkbox is unchecked")
-        # Add logic for when the checkbox is unchecked
-#
+        return 0
+
 
 frame_1 = customtkinter.CTkFrame(master=app, corner_radius=10)
-frame_1.grid(row=0, column=1, rowspan=4, sticky="nsew", pady=20, padx=20)
+frame_1.grid(row=0, column=1, rowspan=4, sticky="nsew", pady=10, padx=10)
 
 label_1 = customtkinter.CTkLabel(master=frame_1, text="Choose Pipe Support List for project:",
                                     font=customtkinter.CTkFont(size=20, weight="bold"))
@@ -66,10 +64,17 @@ browse_button.grid(row=2, column=2, padx=(20, 20), pady=(20, 20), sticky="nsew")
 file_name = customtkinter.CTkLabel(master=frame_1, text=f"{content}")
 file_name.grid(row=2, column=0, pady=10, padx=1)
 
-#
-progress_bar = customtkinter.CTkLabel(master=app, text=f"-=-")
-progress_bar.grid(row=7, column=1, pady=10, padx=10)
 
+frame_2 = customtkinter.CTkFrame(master=app, corner_radius=10)
+frame_2.grid(row=4, column=1, rowspan=3, sticky="nsew", pady=10, padx=10)
+button_definition_label = customtkinter.CTkLabel(master=frame_2, justify='left', text='"Check tags" button - check if                     "Fill tags" button is available\n'
+                                                                  'load tags match SD-tags in the                    only after using the "Checking" feature\n'
+                                                                  'pipe support list')
+button_definition_label.grid(row=4, column=0, pady=10, padx=30, sticky="w")
+
+progress_bar = customtkinter.CTkProgressBar(master=app, width=400)
+progress_bar.set(0)
+progress_bar.grid_forget()
 
 def check_load_sd_tags():
     correct_tags = []
@@ -80,7 +85,7 @@ def check_load_sd_tags():
     waiting_sd_tag = []
 
     text_1 = customtkinter.CTkTextbox(master=app, width=600, height=170)
-    text_1.grid(row=6, column=1, pady=20, padx=20, sticky="nsew")
+    text_1.grid(row=7, column=1, pady=10, padx=10, sticky="nsew")
     text_1.insert("0.0", f"{fb.space_text}")
 
     acad = win32com.client.Dispatch("AutoCAD.Application")
@@ -91,6 +96,8 @@ def check_load_sd_tags():
 
     print("Paperspace - ",len(acad.ActiveDocument.PaperSpace))
 
+    progress_bar.grid(row=8, column=1, pady=10, padx=10, sticky="e")
+    progress_bar.set(0)
     progress = 0
     full_progress = len(acad.ActiveDocument.PaperSpace) - 1
     all_checked_tags = 0
@@ -100,8 +107,10 @@ def check_load_sd_tags():
     for entity in acad.ActiveDocument.PaperSpace:
         name = entity.EntityName
 
-        progress_percentage = f"{round(((progress / full_progress) * 100), 0)} %"
-        progress_bar.configure(text=progress_percentage)
+
+        progress_percentage = progress / full_progress
+        progress_bar.set(progress_percentage)
+        app.update_idletasks()
 
         progress += 1
         if name == 'AcDbBlockReference':
@@ -147,15 +156,6 @@ def check_load_sd_tags():
                             # print(f"{attrib.TagString} -- {attrib.TextString} -- WRONG TAG")
         else:
             continue
-
-    # result_checking = customtkinter.CTkLabel(master=app, text=f"Checking SD-TAGs complete! \n"
-    #                                                           f"Correct load + SD-tags - {len(correct_tags)}\n"
-    #                                                           f"Possible to fill SD-tags - {len(possible_to_fill)}\n"
-    #                                                           f"Waiting for load tags - {len(waiting_load_tag)}\n"
-    #                                                           f"Waiting for SD-tags - {len(waiting_sd_tag)}\n"
-    #                                                           f"Wrong load tags - {len(wrong_load_tags)}\n"
-    #                                                           f"Wrong SD-tags - {len(wrong_sd_tags)}")
-    # result_checking.grid(row=5, column=1, pady=2, padx=0.5)
 
 
     # summarize detail result text
@@ -214,11 +214,11 @@ def check_load_sd_tags():
     print("waiting load tags - ", waiting_load_tag)
     print("waiting sd tags - ", waiting_sd_tag)
 
-    progress_bar.destroy()
+    progress_bar.grid_forget()
+    btn_export_report.configure(state=tkinter.NORMAL)
     return
 def start_checking():
     # result_filling.destroy()
-    progress_bar.destroy()
     text_1.destroy()
     btn_check_tags.configure(state=tkinter.DISABLED)
     thread = threading.Thread(target=check_load_sd_tags)
@@ -228,7 +228,6 @@ def start_checking():
     check_thread(thread)
     return
 
-
 def fill_sd_tags():
     filled_tags = []
     wrong_load_tags = []
@@ -237,7 +236,7 @@ def fill_sd_tags():
     draw_check_box = rev_circle_check_box.get()
 
     text_1 = customtkinter.CTkTextbox(master=app, width=600, height=170)
-    text_1.grid(row=6, column=1, pady=20, padx=20, sticky="nsew")
+    text_1.grid(row=7, column=1, pady=10, padx=10, sticky="nsew")
     text_1.insert("0.0", f"{fb.space_text}")
 
     acad = win32com.client.Dispatch("AutoCAD.Application")
@@ -246,14 +245,18 @@ def fill_sd_tags():
     doc_filename = doc.FullName
     tag_list = read_tags_pd(content)
 
+    progress_bar.grid(row=8, column=1, pady=10, padx=10, sticky="e")
+    progress_bar.set(0)
     progress = 0
+
     full_progress = len(acad.ActiveDocument.PaperSpace) - 1
 
     for entity in acad.ActiveDocument.PaperSpace:
         name = entity.EntityName
 
-        progress_percentage = f"{round(((progress / full_progress) * 100), 0)} %"
-        progress_bar.configure(text=progress_percentage)
+        progress_percentage = progress / full_progress
+        progress_bar.set(progress_percentage)
+        app.update_idletasks()
 
         progress += 1
         count_filled_tags = 0
@@ -323,20 +326,10 @@ def fill_sd_tags():
     # text_1.grid(row=6, column=1, pady=2, padx=0.5)
     text_1.insert("0.0", f"{detail_res}")
 
-    progress_bar.destroy()
+    progress_bar.grid_forget()
     return
-def confirmation():
-    # res = tkinter.messagebox.askquestion("Fill tags", "Do you really want to fill all SD-tags?")
-    msg_box_confirmation = CTkMessagebox(title="Confirmation", message="Do you really want to fill all tags?",
-                                         option_1="No way!", option_2="Yes") # doesnt work
-    user_response = msg_box_confirmation.get()
-    if user_response == "Yes":
-        return 1
-    else:
-        return 0
+
 def start_fill():
-    # result_filling.destroy()
-    progress_bar.destroy()
     text_1.destroy()
     confirmation_res = confirmation()
     if confirmation_res == 1:
@@ -355,25 +348,27 @@ def check_thread(thread):
         btn_fill_tags.configure(state=tkinter.NORMAL)
         btn_check_tags.configure(state=tkinter.NORMAL)
 
+def export_to_xlsx(report):
+    pass
 
-btn_check_tags = customtkinter.CTkButton(master=app, command=start_checking, text="Check tags")
-btn_check_tags.grid(row=4, column=1, padx=50, pady=10, sticky="w")
+btn_export_report = customtkinter.CTkButton(master=app, command=export_to_xlsx, text="Export to .xlsx")
+btn_export_report.grid(row=8, column=1, padx=30, pady=10, sticky="nw")
+btn_export_report.configure(state=tkinter.DISABLED)
 
-btn_fill_tags = customtkinter.CTkButton(master=app, command=start_fill, text="Fill tags")
-btn_fill_tags.grid(row=5, column=1, padx=50, pady=10, sticky="w")
+btn_check_tags = customtkinter.CTkButton(master=frame_2, command=start_checking, text="Check tags")
+btn_check_tags.grid(row=5, column=0, padx=30, pady=10, sticky="w")
+
+btn_fill_tags = customtkinter.CTkButton(master=frame_2, command=start_fill, text="Fill tags")
+btn_fill_tags.grid(row=5, column=0, padx=250, pady=10, sticky="w")
 btn_fill_tags.configure(state=tkinter.DISABLED)
 
 # Add a checkbox
 rev_circle_check_box = customtkinter.BooleanVar(value=True)  # Variable to track checkbox state
-checkbox = customtkinter.CTkCheckBox(app, text="Draw a marker on changed tags", variable=rev_circle_check_box)
-checkbox.grid(row=5, column=1, pady=1, padx=200, sticky="w")
-# Trace changes on the checkbox
-rev_circle_check_box.trace("w", checkbox_changed)
-
+checkbox = customtkinter.CTkCheckBox(master=frame_2, text="Draw a marker on changed tags", variable=rev_circle_check_box)
+checkbox.grid(row=6, column=0, pady=10, padx=250, sticky="w")
 
 text_1 = customtkinter.CTkTextbox(master=app, width=600, height=170)
-text_1.grid(row=6, column=1, pady=20, padx=20, sticky="nsew")
+text_1.grid(row=7, column=1, pady=10, padx=10, sticky="nsew")
 text_1.insert("0.0", f"DETAILS:")
-
 
 app.mainloop()
