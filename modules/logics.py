@@ -36,3 +36,9 @@ def draw_marker(center, radius, color=1):
     center_point = APoint(center[0], center[1], center[2])
     circle = doc_1.PaperSpace.AddCircle(center_point, radius)
     circle.Color = color
+
+
+def export_report(filename):
+
+
+    pass
