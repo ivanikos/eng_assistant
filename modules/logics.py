@@ -1,5 +1,9 @@
+import os
+
 import pandas as pd
+from pandas.io.formats.format import return_docstring
 from pyautocad import Autocad, APoint
+import xlsxwriter
 
 
 """Read the tag-list .xlsm/xlsx etc."""
@@ -38,7 +42,82 @@ def draw_marker(center, radius, color=1):
     circle.Color = color
 
 
-def export_report(filename):
+def export_report(filename, report):
+    workbook_summary = xlsxwriter.Workbook(f'{os.getcwd()}\\{filename}.xlsx')
+
+    # -------------------------------------Краткая сводка
+    ws0 = workbook_summary.add_worksheet('Report')
+    ws0.set_column(0, 2, 25)
+    ws0.set_row(0, 45)
+    # ws0.set_column(1, 1, 40)
+    # ws0.set_column(4, 15, 12)
+    # ws0.set_column(2, 2, 12)
+    # ws0.set_column(3, 3, 12)
+
+    cell_format_green = workbook_summary.add_format()
+    cell_format_green.set_bg_color('#99FF99')
+    cell_format_blue = workbook_summary.add_format()
+    cell_format_blue.set_bg_color('#99CCCC')
+    cell_format_hat = workbook_summary.add_format()
+    cell_format_hat.set_bg_color('#FF9966')
+    cell_format_date = workbook_summary.add_format()
+    cell_format_date.set_font_size(font_size=14)
+
+    for i, (one, two, three) in enumerate(report, start=1):
+        color = cell_format_blue
+        if "Working" in one:
+            color = cell_format_hat
+            color.set_text_wrap(text_wrap=1)
+            ws0.merge_range('A1:C1', one, color)
+            continue
+        if "***" in one:
+            color = cell_format_green
+
+        if "Checking SD-TAGs complete" in one or \
+            "DETAIL CHECKING" in one or "Load tags does" in one or "SD tag" in one:
+            color.set_text_wrap(text_wrap=1)
+            color = cell_format_hat
+        try:
+            color.set_border(style=1)
+            color.set_text_wrap(text_wrap=1)
+        except:
+            pass
+
+        ws0.write(f'A{i}', one, color)
+        ws0.write(f'B{i}', two, color)
+        ws0.write(f'C{i}', three, color)
+
+    workbook_summary.close()
+    return
 
 
-    pass
+report_list = [['Working file name: \n C:\\Users\\ivaign\\OneDrive - United Conveyor Corp\\Documents\\Python_Projects\\C-54880-13-078-079(TESTING).dwg', '', ''],
+                ['***', '***', '***'],
+                ['Checking SD-TAGs complete!', '', ''],
+                ['Checked tags - 104', '', ''],
+                ['Correct load + SD-tags - 99', '', ''],
+                ['Possible to fill SD-tags - 0', '', ''],
+                ['Waiting for load tags - 1', '', ''],
+                ['Waiting for SD-tags - 1', '', ''],
+                ['Wrong load tags - 3', '', ''],
+                ['Wrong SD-tags - 0 ', '', ''],
+                ['***', '***', '***'],
+                ['DETAIL CHECKING RESULT:', '', ''],
+                ['Load tags does not exist:', '', ''],
+                ['Actual load tag', 'Actual SD tag', ''],
+                ['n/a ', ' LATER', ''],
+                ['P800_WRONG ', ' LATER', ''],
+                [' ', ' LATER', ''],
+                ['***', '***', '***'],
+                ['Load tag - LATER:', '', ''],
+                ['Actual load tag', 'Actual SD tag', ''],
+                ['LATER ', ' LATER', ''],
+                ['***', '***', '***'],
+                ['SD tag does not exist yet:', '', ''],
+                ['Actual load tag', 'Actual SD tag', ''],
+                ['P800440', 'SD-547', ''],
+                ['***', '***', '***'],
+                ['Correct load + SD tags:', '', ''],
+                ['Actual load tag', 'Actual SD tag', '']]
+
+export_report("tast", report_list)

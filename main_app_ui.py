@@ -16,6 +16,7 @@ import win32com.client
 from modules import fill_block as fb
 from modules.logics import read_tags_pd
 from modules.logics import draw_marker
+from modules.logics import export_report
 
 customtkinter.set_ctk_parent_class(tkinterdnd2.Tk)
 
@@ -76,7 +77,11 @@ progress_bar = customtkinter.CTkProgressBar(master=app, width=200)
 progress_bar.set(0)
 progress_bar.grid_forget()
 
+report_to_export = []
+
 def check_load_sd_tags():
+    report_to_export = []
+
     correct_tags = []
     wrong_load_tags = []
     wrong_sd_tags = []
@@ -90,11 +95,8 @@ def check_load_sd_tags():
 
     acad = win32com.client.Dispatch("AutoCAD.Application")
     doc = acad.ActiveDocument  # Document object
+    doc_filename = doc.FullName
     tag_list = read_tags_pd(content)
-
-    print(acad.FullName) # full path to file
-
-    print("Paperspace - ",len(acad.ActiveDocument.PaperSpace))
 
     progress_bar.grid(row=8, column=1, pady=10, padx=10)
     progress_bar.set(0)
@@ -103,10 +105,10 @@ def check_load_sd_tags():
     all_checked_tags = 0
 
     print("Blocks - ", len(doc.Blocks))
+    print("Paperspace - ",len(acad.ActiveDocument.PaperSpace))
 
     for entity in acad.ActiveDocument.PaperSpace:
         name = entity.EntityName
-
 
         progress_percentage = progress / full_progress
         progress_bar.set(progress_percentage)
@@ -116,9 +118,6 @@ def check_load_sd_tags():
         if name == 'AcDbBlockReference':
             HasAttributes = entity.HasAttributes
             if HasAttributes:
-                # print(entity.Name)
-                # print(entity.Layer)
-                # print(entity.ObjectID)
                 load_tag = "n/a"
                 for attrib in entity.GetAttributes():
                     if "DWGNO" in attrib.TagString:
@@ -126,7 +125,6 @@ def check_load_sd_tags():
 
                     if "TAG" in attrib.TagString:
                         load_tag = attrib.TextString.strip()
-
 
                     if "DRAWING" in attrib.TagString and attrib.TextString:
                         # print(load_tag, attrib.TextString)
@@ -150,16 +148,30 @@ def check_load_sd_tags():
                             elif load_tag in tag_list.keys() and not tag_list[load_tag]:
                                 waiting_sd_tag.append(f"{load_tag} - {sd_tag} - wait sd-tag")
                             else:
-                                wrong_load_tags.append(f"{load_tag} - {sd_tag} - need to double check LOAD TAG")
+                                wrong_load_tags.append(f"{load_tag.strip().replace("-", "n/a")} - {sd_tag} - need to double check LOAD TAG")
                         except Exception as e:
                             print(e)
                             # print(f"{attrib.TagString} -- {attrib.TextString} -- WRONG TAG")
         else:
             continue
 
+    # preparing to export report
+    report_to_export.append([f"Working file name: \n {doc_filename}", "", ""])
+    report_to_export.append(["***", "***", "***"])
+    report_to_export.append([f"Checking SD-TAGs complete!", "", ""])
+    report_to_export.append([f"Checked tags - {all_checked_tags}", "", ""])
+    report_to_export.append([f"Correct load + SD-tags - {len(correct_tags)}", "", ""])
+    report_to_export.append([f"Possible to fill SD-tags - {len(possible_to_fill)}", "", ""])
+    report_to_export.append([f"Waiting for load tags - {len(waiting_load_tag)}", "", ""])
+    report_to_export.append([f"Waiting for SD-tags - {len(waiting_sd_tag)}", "", ""])
+    report_to_export.append([f"Wrong load tags - {len(wrong_load_tags)}", "", ""])
+    report_to_export.append([f"Wrong SD-tags - {len(wrong_sd_tags)} ", "", ""])
+    report_to_export.append(["***", "***", "***"])
+    report_to_export.append(["DETAIL CHECKING RESULT:", "", ""])
 
     # summarize detail result text
-    result_overview = f"Checking SD-TAGs complete! \n" \
+    result_overview = f"Working file name: \n {doc_filename}\n\n" \
+            f"Checking SD-TAGs complete! \n" \
             f"Checked tags - {all_checked_tags}\n" \
             f"Correct load + SD-tags - {len(correct_tags)}\n" \
             f"Possible to fill SD-tags - {len(possible_to_fill)}\n" \
@@ -171,56 +183,96 @@ def check_load_sd_tags():
     detail_res = result_overview + "DETAIL CHECKING RESULT:\n"
 
     if wrong_load_tags:
-        detail_res += "\nWrong load tags: \n"
+        detail_res += "\nLoad tags does not exist: \n"
+        report_to_export.append(["Load tags does not exist:", "", ""])
+        report_to_export.append(["Actual load tag", "Actual SD tag", ""])
         for i in wrong_load_tags:
             detail_res = detail_res + f"{i}, \n"
+            l_t = i.replace(" - need to double check LOAD TAG", "").split("-")[0]
+            sd_t = i.replace(" - need to double check LOAD TAG", "").split("-")[1]
+            report_to_export.append([l_t, sd_t, ""])
+        report_to_export.append(["***", "***", "***"])
 
     if wrong_sd_tags:
         detail_res += "\nWrong SD-tags: \n"
+        report_to_export.append(["SD tags does not match:", "", ""])
+        report_to_export.append(["Actual load tag", "Actual SD tag", "SD tag in pipe support list"])
         for i in wrong_sd_tags:
             detail_res = detail_res + f"{i}, \n"
-
-    # if correct_tags:
-    #     detail_res += "\nCorrect tags: \n"
-    #     for i in correct_tags:
-    #         detail_res = detail_res + f"{i}, \n"
+            l_t = i.replace("- INcorrect - in the support list", "") \
+                .replace(" - ", "&").split("&")[0]
+            sd_t = i.replace("- INcorrect - in the support list", "") \
+                .replace(" - ", "&").split("&")[1]
+            csd_t = i.replace("- INcorrect - in the support list", "") \
+                .replace(" - ", "&").split("&")[2]
+            report_to_export.append([l_t, sd_t, csd_t])
+        report_to_export.append(["***", "***", "***"])
 
     if possible_to_fill:
         detail_res += "\nPossible to fill tags: \n"
+        report_to_export.append(["Tags ready to fill:", "", ""])
+        report_to_export.append(["Actual load tag", "Actual SD tag", "SD tag in pipe support list"])
         for i in possible_to_fill:
             detail_res = detail_res + f"{i}, \n"
+            # .replace("- in the support list", "").replace(" - ", "&").split("&"))
+            l_t = i.replace("- in the support list", "").replace(" - ", "&").split("&")[0]
+            sd_t = i.replace("- in the support list", "").replace(" - ", "&").split("&")[1]
+            csd_t = i.replace("- in the support list", "").replace(" - ", "&").split("&")[2]
+            report_to_export.append([l_t, sd_t, csd_t])
+        report_to_export.append(["***", "***", "***"])
 
     if waiting_load_tag:
         detail_res += "\nWaiting for load tags: \n"
+        report_to_export.append(["Load tag - LATER:", "", ""])
+        report_to_export.append(["Actual load tag", "Actual SD tag", ""])
         for i in waiting_load_tag:
             detail_res = detail_res + f"{i}, \n"
+            l_t = i.split("-")[0]
+            sd_t = i.split("-")[1]
+            report_to_export.append([l_t, sd_t, ""])
+        report_to_export.append(["***", "***", "***"])
 
     if waiting_sd_tag:
         detail_res += "\nWaiting for sd tags: \n"
+        report_to_export.append(["SD tag does not exist yet:", "", ""])
+        report_to_export.append(["Actual load tag", "Actual SD tag", ""])
         for i in waiting_sd_tag:
             detail_res = detail_res + f"{i}, \n"
+            l_t = i.replace(" - ", "&").split("&")[0]
+            sd_t = i.replace(" - ", "&").split("&")[1]
+            report_to_export.append([l_t, sd_t, ""])
+        report_to_export.append(["***", "***", "***"])
 
+    if correct_tags:
+        detail_res += "\nCorrect tags: \n"
+        report_to_export.append(["Correct load + SD tags:", "", ""])
+        report_to_export.append(["Actual load tag", "Actual SD tag", ""])
+        for i in correct_tags:
+            detail_res = detail_res + f"{i}, \n"
+            l_t = i.split(" - ")[0]
+            sd_t = i.split(" - ")[1]
+            report_to_export.append([l_t, sd_t, ""])
+        report_to_export.append(["***", "***", "***"])
 
-
-
-    # text_1 = customtkinter.CTkTextbox(master=app, width=600, height=170)
-    # text_1.grid(row=6, column=1, pady=2, padx=0.5)
     text_1.insert("0.0", f"{detail_res}")
 
-    print("correct tags - ", correct_tags)
-    print("wrong load tags - ", wrong_load_tags)
-    print("wrong sd tags - ", wrong_sd_tags)
-    print("possible to fill tags - ", possible_to_fill)
-    print("waiting load tags - ", waiting_load_tag)
-    print("waiting sd tags - ", waiting_sd_tag)
+    # print("correct tags - ", correct_tags)
+    # print("wrong load tags - ", wrong_load_tags)
+    # print("wrong sd tags - ", wrong_sd_tags)
+    # print("possible to fill tags - ", possible_to_fill)
+    # print("waiting load tags - ", waiting_load_tag)
+    # print("waiting sd tags - ", waiting_sd_tag)
 
     progress_bar.grid_forget()
     btn_export_report.configure(state=tkinter.NORMAL)
+    for i in report_to_export:
+        print(i)
     return
 def start_checking():
-    # result_filling.destroy()
     text_1.destroy()
     btn_check_tags.configure(state=tkinter.DISABLED)
+    btn_fill_tags.configure(state=tkinter.DISABLED)
+    btn_export_report.configure(state=tkinter.DISABLED)
     thread = threading.Thread(target=check_load_sd_tags)
     print(threading.main_thread().name)
     print(thread.name)
@@ -248,6 +300,7 @@ def fill_sd_tags():
     progress_bar.grid(row=8, column=1, pady=10, padx=10)
     progress_bar.set(0)
     progress = 0
+    count_filled_tags = 0
 
     full_progress = len(acad.ActiveDocument.PaperSpace) - 1
 
@@ -259,7 +312,6 @@ def fill_sd_tags():
         app.update_idletasks()
 
         progress += 1
-        count_filled_tags = 0
         if name == 'AcDbBlockReference':
             HasAttributes = entity.HasAttributes
             insertion_point = entity.InsertionPoint
@@ -274,12 +326,8 @@ def fill_sd_tags():
                 load_tag = "n/a"
                 for attrib in entity.GetAttributes():
                     if "TAG" in attrib.TagString:
-                        # print("!!!!!tag ", attrib.TextString)
                         load_tag = attrib.TextString.strip()
-                    # update text
-                    # if 'DRAWING' in attrib.TagString and "LATER" in attrib.TextString:
                     if 'DRAWING' in attrib.TagString:
-                        # print(f"  --- {attrib.TextString}")
                         if load_tag not in tag_list.keys():
                             wrong_load_tags.append(f"{load_tag} - load_tag does not exist")
                         try:
@@ -297,14 +345,12 @@ def fill_sd_tags():
                         except Exception as e:
                             print(e)
                             pass
-    # result_filling = customtkinter.CTkLabel(master=app, text=f"Filling SD-TAGs complete! \n"
-    #                                                          f"filled - {len(filled_tags)} SD-tags.")
-    # result_filling.grid(row=5, column=1, pady=2, padx=0.5)
+
 
     # summarize detail result text
     result_text = f"Working file name: \n {doc_filename}\n\n" \
                    f"Filling SD-TAGs complete! \n" \
-                    f"filled - {len(filled_tags)} SD-tags.\n"
+                    f"filled - {count_filled_tags} SD-tags.\n"
     detail_res = result_text + "\nDETAIL FILLING RESULT:\n"
 
     if left_tags:
@@ -317,23 +363,18 @@ def fill_sd_tags():
         for i in wrong_load_tags:
             detail_res = detail_res + f"{i}, \n"
 
-    # if filled_tags:
-    #     detail_res += "\nFilled tags: \n"
-    #     for i in filled_tags:
-    #         detail_res = detail_res + f"{i}, \n"
-
-    # text_1 = customtkinter.CTkTextbox(master=app, width=600, height=170)
-    # text_1.grid(row=6, column=1, pady=2, padx=0.5)
     text_1.insert("0.0", f"{detail_res}")
 
     progress_bar.grid_forget()
+    btn_export_report.configure(state=tkinter.NORMAL)
     return
-
 def start_fill():
     text_1.destroy()
     confirmation_res = confirmation()
     if confirmation_res == 1:
         btn_fill_tags.configure(state=tkinter.DISABLED)
+        btn_check_tags.configure(state=tkinter.DISABLED)
+        btn_export_report.configure(state=tkinter.DISABLED)
         thread = threading.Thread(target=fill_sd_tags)
         print(threading.main_thread().name)
         print(thread.name)
@@ -348,10 +389,9 @@ def check_thread(thread):
         btn_fill_tags.configure(state=tkinter.NORMAL)
         btn_check_tags.configure(state=tkinter.NORMAL)
 
-def export_to_xlsx(report):
-    pass
 
-btn_export_report = customtkinter.CTkButton(master=app, command=export_to_xlsx, text="Export to .xlsx")
+# btn_export_report = customtkinter.CTkButton(master=app, command=export_report(ex_filename, report_to_export), text="Export to .xlsx")
+btn_export_report = customtkinter.CTkButton(master=app, text="Export to .xlsx")
 btn_export_report.grid(row=8, column=1, padx=30, pady=10, sticky="nw")
 btn_export_report.configure(state=tkinter.DISABLED)
 
@@ -375,4 +415,8 @@ text_1 = customtkinter.CTkTextbox(master=app, width=600, height=170)
 text_1.grid(row=7, column=1, pady=10, padx=10, sticky="nsew")
 text_1.insert("0.0", f"DETAILS:")
 
+
+
+
 app.mainloop()
+
