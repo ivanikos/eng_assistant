@@ -8,7 +8,7 @@ import tkinter.messagebox
 import customtkinter
 import tkinterdnd2
 import threading
-from tkinter.filedialog import askopenfile
+from tkinter.filedialog import askopenfile, asksaveasfilename
 from CTkMessagebox import CTkMessagebox
 
 import win32com.client
@@ -50,6 +50,21 @@ def confirmation():
     else:
         return 0
 
+report_to_export = []
+def export():
+    # Open the save file dialog
+    file_path = asksaveasfilename(
+        defaultextension=".txt",  # Default file extension
+        filetypes=[("Excel files", "*.xlsx")]
+    )
+    if file_path:
+        export_report(report_to_export, file_path)
+        print(f"Path to report - {file_path}")
+    else:
+        print("NO filename")
+
+
+
 user_name = os.getlogin()
 frame_1 = customtkinter.CTkFrame(master=app, corner_radius=10)
 frame_1.grid(row=0, column=1, rowspan=4, sticky="nsew", pady=10, padx=10)
@@ -77,10 +92,11 @@ progress_bar = customtkinter.CTkProgressBar(master=app, width=200)
 progress_bar.set(0)
 progress_bar.grid_forget()
 
-report_to_export = []
 
 def check_load_sd_tags():
+    global report_to_export
     report_to_export = []
+
 
     correct_tags = []
     wrong_load_tags = []
@@ -265,8 +281,6 @@ def check_load_sd_tags():
 
     progress_bar.grid_forget()
     btn_export_report.configure(state=tkinter.NORMAL)
-    for i in report_to_export:
-        print(i)
     return
 def start_checking():
     text_1.destroy()
@@ -281,6 +295,9 @@ def start_checking():
     return
 
 def fill_sd_tags():
+    global report_to_export
+    report_to_export = []
+
     filled_tags = []
     wrong_load_tags = []
     left_tags = []
@@ -301,6 +318,7 @@ def fill_sd_tags():
     progress_bar.set(0)
     progress = 0
     count_filled_tags = 0
+    count_not_filled_tags = 0
 
     full_progress = len(acad.ActiveDocument.PaperSpace) - 1
 
@@ -330,6 +348,7 @@ def fill_sd_tags():
                     if 'DRAWING' in attrib.TagString:
                         if load_tag not in tag_list.keys():
                             wrong_load_tags.append(f"{load_tag} - load_tag does not exist")
+                            count_not_filled_tags += 1
                         try:
                             if tag_list[load_tag] != "nan" and tag_list[load_tag]:
                                 attrib.TextString = tag_list[load_tag]
@@ -342,31 +361,65 @@ def fill_sd_tags():
                                 count_filled_tags += 1
                             else:
                                 left_tags.append(f"{load_tag} - waiting sd-tag")
+                                count_not_filled_tags += 1
                         except Exception as e:
                             print(e)
                             pass
+
+    # preparing to export report
+    report_to_export.append([f"Working file name: \n {doc_filename}", "", ""])
+    report_to_export.append(["***", "***", "***"])
+    report_to_export.append([f"Filling SD-TAGs complete!", "", ""])
+    report_to_export.append([f"Filled - {count_filled_tags} SD-tags.", "", ""])
+    report_to_export.append([f"NOT Filled - {count_not_filled_tags} SD-tags.", "", ""])
+    report_to_export.append(["***", "***", "***"])
+    report_to_export.append(["DETAIL CHECKING RESULT:", "", ""])
 
 
     # summarize detail result text
     result_text = f"Working file name: \n {doc_filename}\n\n" \
                    f"Filling SD-TAGs complete! \n" \
-                    f"filled - {count_filled_tags} SD-tags.\n"
+                    f"Filled - {count_filled_tags} SD-tags.\n"
     detail_res = result_text + "\nDETAIL FILLING RESULT:\n"
 
     if left_tags:
         detail_res += "\nNOT filled tags: \n"
+        report_to_export.append(["NOT filled tags - waiting SD-tag:", "", ""])
+        report_to_export.append(["Actual load tag", "Actual SD tag", ""])
         for i in left_tags:
             detail_res = detail_res + f"{i}, \n"
+            l_t = i.split(" - ")[0]
+            report_to_export.append([l_t, "Waiting SD-tag", ""])
+        report_to_export.append(["***", "***", "***"])
 
     if wrong_load_tags:
         detail_res += "\nLoad tags doesn't match support list: \n"
+        report_to_export.append(["Load tags doesn't exist in support list:", "", ""])
+        report_to_export.append(["Actual load tag", "Existing status", ""])
         for i in wrong_load_tags:
             detail_res = detail_res + f"{i}, \n"
+            l_t = i.split(" - ")[0]
+            report_to_export.append([l_t, "Check load-tag", ""])
+        report_to_export.append(["***", "***", "***"])
+
+    if filled_tags:
+        detail_res += "\nFilled tags: \n"
+        report_to_export.append(["Filled tags:", "", ""])
+        report_to_export.append(["Actual load tag", "Actual SD tag", "Status"])
+        for i in filled_tags:
+            detail_res = detail_res + f"{i}, \n"
+            l_t = i.split(" - ")[0]
+            sd_t = i.split(" - ")[1]
+            status = i.split(" - ")[2]
+            report_to_export.append([l_t, sd_t, status])
+        report_to_export.append(["***", "***", "***"])
 
     text_1.insert("0.0", f"{detail_res}")
 
     progress_bar.grid_forget()
     btn_export_report.configure(state=tkinter.NORMAL)
+
+
     return
 def start_fill():
     text_1.destroy()
@@ -390,8 +443,8 @@ def check_thread(thread):
         btn_check_tags.configure(state=tkinter.NORMAL)
 
 
-# btn_export_report = customtkinter.CTkButton(master=app, command=export_report(ex_filename, report_to_export), text="Export to .xlsx")
-btn_export_report = customtkinter.CTkButton(master=app, text="Export to .xlsx")
+btn_export_report = customtkinter.CTkButton(master=app, command=export, text="Export to .xlsx")
+# btn_export_report = customtkinter.CTkButton(master=app, text="Export to .xlsx")
 btn_export_report.grid(row=8, column=1, padx=30, pady=10, sticky="nw")
 btn_export_report.configure(state=tkinter.DISABLED)
 

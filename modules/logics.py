@@ -1,7 +1,6 @@
 import os
 
 import pandas as pd
-from pandas.io.formats.format import return_docstring
 from pyautocad import Autocad, APoint
 import xlsxwriter
 
@@ -42,9 +41,8 @@ def draw_marker(center, radius, color=1):
     circle.Color = color
 
 
-def export_report(filename, report):
-    workbook_summary = xlsxwriter.Workbook(f'{os.getcwd()}\\{filename}.xlsx')
-
+def export_report(report, filename):
+    workbook_summary = xlsxwriter.Workbook(f'{filename}')
     # -------------------------------------Краткая сводка
     ws0 = workbook_summary.add_worksheet('Report')
     ws0.set_column(0, 2, 25)
@@ -88,36 +86,37 @@ def export_report(filename, report):
         ws0.write(f'C{i}', three, color)
 
     workbook_summary.close()
+    print("Success")
     return
 
-
-report_list = [['Working file name: \n C:\\Users\\ivaign\\OneDrive - United Conveyor Corp\\Documents\\Python_Projects\\C-54880-13-078-079(TESTING).dwg', '', ''],
-                ['***', '***', '***'],
-                ['Checking SD-TAGs complete!', '', ''],
-                ['Checked tags - 104', '', ''],
-                ['Correct load + SD-tags - 99', '', ''],
-                ['Possible to fill SD-tags - 0', '', ''],
-                ['Waiting for load tags - 1', '', ''],
-                ['Waiting for SD-tags - 1', '', ''],
-                ['Wrong load tags - 3', '', ''],
-                ['Wrong SD-tags - 0 ', '', ''],
-                ['***', '***', '***'],
-                ['DETAIL CHECKING RESULT:', '', ''],
-                ['Load tags does not exist:', '', ''],
-                ['Actual load tag', 'Actual SD tag', ''],
-                ['n/a ', ' LATER', ''],
-                ['P800_WRONG ', ' LATER', ''],
-                [' ', ' LATER', ''],
-                ['***', '***', '***'],
-                ['Load tag - LATER:', '', ''],
-                ['Actual load tag', 'Actual SD tag', ''],
-                ['LATER ', ' LATER', ''],
-                ['***', '***', '***'],
-                ['SD tag does not exist yet:', '', ''],
-                ['Actual load tag', 'Actual SD tag', ''],
-                ['P800440', 'SD-547', ''],
-                ['***', '***', '***'],
-                ['Correct load + SD tags:', '', ''],
-                ['Actual load tag', 'Actual SD tag', '']]
-
-export_report("tast", report_list)
+#
+# report_list = [['Working file name: \n C:\\Users\\ivaign\\OneDrive - United Conveyor Corp\\Documents\\Python_Projects\\C-54880-13-078-079(TESTING).dwg', '', ''],
+#                 ['***', '***', '***'],
+#                 ['Checking SD-TAGs complete!', '', ''],
+#                 ['Checked tags - 104', '', ''],
+#                 ['Correct load + SD-tags - 99', '', ''],
+#                 ['Possible to fill SD-tags - 0', '', ''],
+#                 ['Waiting for load tags - 1', '', ''],
+#                 ['Waiting for SD-tags - 1', '', ''],
+#                 ['Wrong load tags - 3', '', ''],
+#                 ['Wrong SD-tags - 0 ', '', ''],
+#                 ['***', '***', '***'],
+#                 ['DETAIL CHECKING RESULT:', '', ''],
+#                 ['Load tags does not exist:', '', ''],
+#                 ['Actual load tag', 'Actual SD tag', ''],
+#                 ['n/a ', ' LATER', ''],
+#                 ['P800_WRONG ', ' LATER', ''],
+#                 [' ', ' LATER', ''],
+#                 ['***', '***', '***'],
+#                 ['Load tag - LATER:', '', ''],
+#                 ['Actual load tag', 'Actual SD tag', ''],
+#                 ['LATER ', ' LATER', ''],
+#                 ['***', '***', '***'],
+#                 ['SD tag does not exist yet:', '', ''],
+#                 ['Actual load tag', 'Actual SD tag', ''],
+#                 ['P800440', 'SD-547', ''],
+#                 ['***', '***', '***'],
+#                 ['Correct load + SD tags:', '', ''],
+#                 ['Actual load tag', 'Actual SD tag', '']]
+#
+# export_report("tast", report_list)
