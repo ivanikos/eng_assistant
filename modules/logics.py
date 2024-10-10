@@ -53,18 +53,19 @@ def export_report(report, filename):
     # ws0.set_column(3, 3, 12)
 
     cell_format_green = workbook_summary.add_format()
-    cell_format_green.set_bg_color('#99FF99')
+    cell_format_green.set_bg_color('#6c8784')
     cell_format_blue = workbook_summary.add_format()
-    cell_format_blue.set_bg_color('#99CCCC')
+    cell_format_blue.set_bg_color('#b0dacc')
     cell_format_hat = workbook_summary.add_format()
-    cell_format_hat.set_bg_color('#FF9966')
-    cell_format_date = workbook_summary.add_format()
-    cell_format_date.set_font_size(font_size=14)
+    cell_format_hat.set_bg_color('#65878f')
+    cell_format_filename = workbook_summary.add_format()
+    cell_format_filename.set_bg_color('#f8e8b5')
+
 
     for i, (one, two, three) in enumerate(report, start=1):
         color = cell_format_blue
         if "Working" in one:
-            color = cell_format_hat
+            color = cell_format_filename
             color.set_text_wrap(text_wrap=1)
             ws0.merge_range('A1:C1', one, color)
             continue
