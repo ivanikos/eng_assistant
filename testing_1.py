@@ -10,6 +10,7 @@ import tkinterdnd2
 import threading
 from tkinter.filedialog import askopenfile, asksaveasfilename
 from CTkMessagebox import CTkMessagebox
+from CTkMenuBar import *
 
 import win32com.client
 
@@ -25,7 +26,7 @@ customtkinter.set_appearance_mode("dark")  # Modes: "System" (standard), "Dark",
 customtkinter.set_default_color_theme("blue")  # Themes: "blue" (standard), "green", "dark-blue"
 
 app = customtkinter.CTk()
-app.geometry("600x560")
+app.geometry("600x570")
 app.title("Pipe Support Verifier v.0.04 (alpha testing)")
 app.grid_columnconfigure(1, weight=1)
 
@@ -51,6 +52,7 @@ def confirmation():
     else:
         return 0
 
+
 def help_menu_action():
     # Create a new top-level window for help
     help_window = customtkinter.CTkToplevel(app)
@@ -68,27 +70,28 @@ def help_menu_action():
         "ivanignatenko@uccenvironmental.com"
     )
 
-    frame_1 = customtkinter.CTkFrame(master=help_window, corner_radius=10)
-    frame_1.grid(row=0, column=1, rowspan=4, sticky="nsew", pady=10, padx=10)
+    frame_help = customtkinter.CTkFrame(master=help_window, corner_radius=10)
+    frame_help.grid(row=0, column=1, rowspan=4, sticky="nsew", pady=10, padx=10)
 
-    label_1 = customtkinter.CTkLabel(master=frame_1, text="Pipe Support Verifier v0.04 (alpha test)",
+    label_top = customtkinter.CTkLabel(master=frame_help, text="Pipe Support Verifier v0.04 (alpha test)",
                                      font=customtkinter.CTkFont(size=20, weight="bold"))
-    label_1.grid(pady=10, padx=10, sticky="nsew")
+    label_top.grid(pady=10, padx=10, sticky="nsew")
 
-    label_2 = customtkinter.CTkLabel(master=frame_1, text=f"{help_message}",
+    label_mid = customtkinter.CTkLabel(master=frame_help, text=f"{help_message}",
                                      font=customtkinter.CTkFont(size=14))
-    label_2.grid(pady=10, padx=10, sticky="nsew")
+    label_mid.grid(pady=10, padx=10, sticky="nsew")
 
     guide_path = r"N:\Piping\_H_PPSE Users\IvaIgn\PSV\Pipe Support Verifier User Guide.pdf"
 
     def open_user_guide():
         # Open the user guide PDF
         try:
-            if os.path.exists(guide_path):
-                os.startfile(guide_path)
-            else:
-                print("User Guide not found!")
+            os.startfile(guide_path)
         except Exception as e:
+            text_1 = customtkinter.CTkTextbox(master=app, width=600, height=170)
+            text_1.grid(row=7, column=1, pady=10, padx=10, sticky="nsew")
+            text_1.insert("0.0", f"ERROR:\n{e}")
+            help_window.destroy()
             print(f"Error opening user guide: {e}")
 
     def open_email():
@@ -96,26 +99,27 @@ def help_menu_action():
         email_address = "ivanignatenko@uccenvironmental.com"
         try:
             os.startfile(f"mailto:{email_address}")
+            help_window.destroy()
         except Exception as e:
+            text_1 = customtkinter.CTkTextbox(master=app, width=600, height=170)
+            text_1.grid(row=7, column=1, pady=10, padx=10, sticky="nsew")
+            text_1.insert("0.0", f"ERROR:\n{e}")
+            help_window.destroy()
             print(f"Error opening email client: {e}")
 
     # Create action buttons
-    contact_button = customtkinter.CTkButton(frame_1, text="Contact Us", command=open_email)
+    contact_button = customtkinter.CTkButton(frame_help, text="Contact Us", command=open_email)
     contact_button.grid(row=4, column=0, padx=10, pady=5, sticky="s")
 
-    guide_button = customtkinter.CTkButton(frame_1, text="Open User Guide", command=open_user_guide)
+    guide_button = customtkinter.CTkButton(frame_help, text="Open User Guide", command=open_user_guide)
     guide_button.grid(row=4, column=0, padx=10, pady=5, sticky="w")
 
-    close_button = customtkinter.CTkButton(frame_1, text="Close", command=help_window.destroy)
+    close_button = customtkinter.CTkButton(frame_help, text="Close", command=help_window.destroy)
     close_button.grid(row=4, column=0, padx=10, pady=5, sticky="e")
 
     return
 
-
 report_to_export = []
-
-
-
 
 user_name = os.getlogin()
 frame_1 = customtkinter.CTkFrame(master=app, corner_radius=10)
@@ -145,23 +149,8 @@ progress_bar.set(0)
 progress_bar.grid_forget()
 
 # Create a Menu Bar (from tkinter)
-menu_bar = tkinter.Menu(app)
-file_menu = tkinter.Menu(menu_bar, tearoff=0)
-file_menu.add_command(label="Placeholder", command=lambda: print("Placeholder"))
-file_menu.add_separator()
-file_menu.add_command(label="Exit", command=app.quit)
-
-# Add the file menu to the menu bar
-menu_bar.add_cascade(label="File", menu=file_menu)
-
-# Create another menu for Edit options
-help_menu = tkinter.Menu(menu_bar, tearoff=0)
-help_menu.add_command(label="Help", command=help_menu_action)
-help_menu.add_separator()
-menu_bar.add_cascade(label="Help", menu=help_menu)
-
-# Add the menu bar to the app window
-app.config(menu=menu_bar)
+file_menu = CTkTitleMenu(master=app)
+file_menu.add_cascade("Help", command=help_menu_action)
 
 
 def export():

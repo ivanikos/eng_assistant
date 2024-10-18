@@ -10,6 +10,7 @@ import tkinterdnd2
 import threading
 from tkinter.filedialog import askopenfile, asksaveasfilename
 from CTkMessagebox import CTkMessagebox
+from CTkMenuBar import *
 
 import win32com.client
 
@@ -148,23 +149,8 @@ progress_bar.set(0)
 progress_bar.grid_forget()
 
 # Create a Menu Bar (from tkinter)
-menu_bar = tkinter.Menu(app)
-file_menu = tkinter.Menu(menu_bar, tearoff=0)
-file_menu.add_command(label="Placeholder", command=lambda: print("Placeholder"))
-file_menu.add_separator()
-file_menu.add_command(label="Exit", command=app.quit)
-
-# Add the file menu to the menu bar
-menu_bar.add_cascade(label="File", menu=file_menu)
-
-# Create another menu for Edit options
-help_menu = tkinter.Menu(menu_bar, tearoff=0)
-help_menu.add_command(label="Help", command=help_menu_action)
-help_menu.add_separator()
-menu_bar.add_cascade(label="Help", menu=help_menu)
-
-# Add the menu bar to the app window
-app.config(menu=menu_bar)
+file_menu = CTkTitleMenu(master=app)
+file_menu.add_cascade("Help", command=help_menu_action)
 
 
 def export():
