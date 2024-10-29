@@ -28,6 +28,7 @@ customtkinter.set_default_color_theme("blue")  # Themes: "blue" (standard), "gre
 app = customtkinter.CTk()
 app.geometry("600x570")
 app.title("Pipe Support Verifier v.0.04 (alpha testing)")
+app.iconbitmap(r'./icons/icon.ico')
 app.grid_columnconfigure(1, weight=1)
 
 """Browse file dialog"""
@@ -44,7 +45,7 @@ def open_file():
 
 def confirmation():
     # res = tkinter.messagebox.askquestion("Fill tags", "Do you really want to fill all SD-tags?")
-    msg_box_confirmation = CTkMessagebox(title="Help", message="Do you really want to fill all tags?",
+    msg_box_confirmation = CTkMessagebox(title="Confirmation", message="Do you really want to fill all tags?",
                                          option_1="Cancel", option_2="Yes")
     user_response = msg_box_confirmation.get()
     if user_response == "Yes":
@@ -57,6 +58,7 @@ def help_menu_action():
     # Create a new top-level window for help
     help_window = customtkinter.CTkToplevel(app)
     help_window.title("Help")
+    help_window.after(250, lambda: help_window.iconbitmap(r'./icons/icon.ico'))
     help_window.geometry("530x240")  # Set the desired window size
     help_window.grid_columnconfigure(1, weight=1)
     help_window.resizable(False, False)
