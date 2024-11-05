@@ -262,8 +262,10 @@ def check_load_sd_tags():
                                         else:
                                             wrong_sd_tags.append(f"{load_tag} - {sd_tag} - INcorrect - in the support list "
                                                                  f"- {tag_list[load_tag]}")
+                                            handles_to_edit.append(entity.Handle)
                                     else:
                                         print(f"ELSE - {load_tag} - {sd_tag}")
+                                        write_log(os.getlogin(), f"ELSE - {load_tag} - {sd_tag}")
                                 elif load_tag in tag_list.keys() and not tag_list[load_tag]:
                                     waiting_sd_tag.append(f"{load_tag} - {sd_tag} - wait sd-tag")
                                 else:

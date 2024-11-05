@@ -23,3 +23,5 @@ WORKS!!! 09/05/24
 python -m PyInstaller -w --onefile --add-data "C:\Users\ivaign\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.12_qbz5n2kfra8p0\LocalCache\local-packages\Python312\site-packages\tkinterdnd2:tkinterdnd2" main_ctk.py
 
 python -m PyInstaller -w --onefile --add-data "C:\Users\ivaign\OneDrive - United Conveyor Corp\Documents\Python_Projects\eng_assistant\venv\Lib\site-packages\tkinterdnd2:tkinterdnd2" main_app_ui.py
+
+python -m PyInstaller -w --onefile --name "Pipe Support Verifier" --add-data "C:\Users\ivaign\OneDrive - United Conveyor Corp\Documents\Python_Projects\eng_assistant\venv\Lib\site-packages\tkinterdnd2:tkinterdnd2" main_app_ui.py

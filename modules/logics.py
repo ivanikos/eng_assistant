@@ -101,3 +101,4 @@ def write_log(user_name, message):
 
     with open(log_file_path, "a") as log_file:
         log_file.write(log_entry)
+        log_file.write("\n*************\n")
