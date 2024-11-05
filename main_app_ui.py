@@ -133,6 +133,7 @@ def help_menu_action():
     return
 
 report_to_export = []
+handles_to_edit = []
 
 user_name = os.getlogin()
 frame_1 = customtkinter.CTkFrame(master=app, corner_radius=10)
@@ -189,6 +190,8 @@ def export():
 
 def check_load_sd_tags():
     global report_to_export
+    global handles_to_edit
+    handles_to_edit = []
     report_to_export = []
 
     all_load_tags = []
@@ -252,6 +255,7 @@ def check_load_sd_tags():
                                     if tag_list[load_tag] and sd_tag.upper() == "LATER":
                                         possible_to_fill.append(f"{load_tag} - {sd_tag} - in the support list - "
                                                                     f"{tag_list[load_tag]}")
+                                        handles_to_edit.append(entity.Handle)
                                     elif tag_list[load_tag] and sd_tag.upper() != "LATER":
                                         if tag_list[load_tag].strip() == sd_tag.strip():
                                             correct_tags.append(f"{load_tag} - {sd_tag} - correct")
@@ -424,6 +428,7 @@ def start_checking():
 
 def fill_sd_tags():
     global report_to_export
+    global handles_to_edit
     report_to_export = []
 
     filled_tags = []
@@ -450,50 +455,46 @@ def fill_sd_tags():
         count_not_filled_tags = 0
 
         full_progress = len(acad.ActiveDocument.PaperSpace) - 1
+        full_progress = len(handles_to_edit) - 1
 
-        for entity in acad.ActiveDocument.PaperSpace:
-            name = entity.EntityName
+        for handle_id in handles_to_edit:
+            target_entity = doc.HandleToObject(f"{handle_id}")
+
+            # Getting scale of block
+            insertion_point = target_entity.InsertionPoint
+            scale_x = target_entity.XScaleFactor
+            scale_y = target_entity.YScaleFactor
+            scale_z = target_entity.ZScaleFactor
+            coord_list = [float(insertion_point[0]), float(insertion_point[1]), float(insertion_point[2])]
 
             progress_percentage = progress / full_progress
             progress_bar.set(progress_percentage)
             app.update_idletasks()
 
             progress += 1
-            if name == 'AcDbBlockReference':
-                HasAttributes = entity.HasAttributes
-                insertion_point = entity.InsertionPoint
-                if HasAttributes:
+            for attrib in target_entity.GetAttributes():
+                if "TAG" in attrib.TagString:
+                    load_tag = attrib.TextString.strip()
+                if 'DRAWING' in attrib.TagString:
+                    if load_tag not in tag_list.keys():
+                        wrong_load_tags.append(f"{load_tag} - load_tag does not exist")
+                        count_not_filled_tags += 1
+                    try:
+                        if tag_list[load_tag] != "nan" and tag_list[load_tag]:
+                            attrib.TextString = tag_list[load_tag]
+                            attrib.Update()
 
-                    # Getting scale of block
-                    scale_x = entity.XScaleFactor
-                    scale_y = entity.YScaleFactor
-                    scale_z = entity.ZScaleFactor
-                    coord_list = [float(insertion_point[0]), float(insertion_point[1]), float(insertion_point[2])]
+                            if draw_check_box:
+                                draw_marker(coord_list, 0.2 * float(scale_x), color=4)
 
-                    load_tag = "n/a"
-                    for attrib in entity.GetAttributes():
-                        if "TAG" in attrib.TagString:
-                            load_tag = attrib.TextString.strip()
-                        if 'DRAWING' in attrib.TagString:
-                            if load_tag not in tag_list.keys():
-                                wrong_load_tags.append(f"{load_tag} - load_tag does not exist")
-                                count_not_filled_tags += 1
-                            try:
-                                if tag_list[load_tag] != "nan" and tag_list[load_tag]:
-                                    attrib.TextString = tag_list[load_tag]
-                                    attrib.Update()
+                            filled_tags.append(f"{load_tag} - {tag_list[load_tag]} - OK")
+                            count_filled_tags += 1
+                        else:
+                            left_tags.append(f"{load_tag} - waiting sd-tag")
+                            count_not_filled_tags += 1
+                    except Exception as e:
+                        print(e)
 
-                                    if draw_check_box:
-                                        draw_marker(coord_list, 0.2 * float(scale_x), color=4)
-
-                                    filled_tags.append(f"{load_tag} - {tag_list[load_tag]} - OK")
-                                    count_filled_tags += 1
-                                else:
-                                    left_tags.append(f"{load_tag} - waiting sd-tag")
-                                    count_not_filled_tags += 1
-                            except Exception as e:
-                                print(e)
-                                pass
 
         # preparing to export report
         report_to_export.append([f"Working file name: \n {doc_filename}", "", ""])
