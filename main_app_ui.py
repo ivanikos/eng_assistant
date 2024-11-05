@@ -18,7 +18,7 @@ from modules import fill_block as fb
 from modules.logics import read_tags_pd
 from modules.logics import draw_marker
 from modules.logics import export_report
-from modules.import_data import help_message
+from modules.logics import write_log
 
 customtkinter.set_ctk_parent_class(tkinterdnd2.Tk)
 
@@ -41,6 +41,9 @@ def open_file():
         print(content)
         file_name = customtkinter.CTkLabel(master=frame_1, text=f"{content}", wraplength=300)
         file_name.grid(row=2, column=0, pady=10, padx=0.5)
+
+        write_log(os.getlogin(), f"File is opened - {content}")
+
     return content
 
 def confirmation():
@@ -49,8 +52,10 @@ def confirmation():
                                          option_1="Cancel", option_2="Yes")
     user_response = msg_box_confirmation.get()
     if user_response == "Yes":
+        write_log(os.getlogin(), f"Filling confirmation - 'YES'")
         return 1
     else:
+        write_log(os.getlogin(), f"Filling confirmation - 'NO'")
         return 0
 
 
@@ -85,27 +90,33 @@ def help_menu_action():
 
     guide_path = r"N:\Piping\_H_PPSE Users\IvaIgn\PSV\Pipe Support Verifier User Guide.pdf"
 
+    write_log(os.getlogin(), f"HELP button was pushed")
+
     def open_user_guide():
         # Open the user guide PDF
         try:
             os.startfile(guide_path)
+            write_log(os.getlogin(), f"Guide opened")
         except Exception as e:
             text_1 = customtkinter.CTkTextbox(master=app, width=600, height=170)
             text_1.grid(row=7, column=1, pady=10, padx=10, sticky="nsew")
             text_1.insert("0.0", f"ERROR:\n{e}")
             help_window.destroy()
+            write_log(os.getlogin(), f"ERROR:\n{e}")
             print(f"Error opening user guide: {e}")
 
     def open_email():
         # Open the default email client with a new message
         email_address = "ivanignatenko@uccenvironmental.com"
         try:
+            write_log(os.getlogin(), f"MAIL TO SUPPORT")
             os.startfile(f"mailto:{email_address}")
             help_window.destroy()
         except Exception as e:
             text_1 = customtkinter.CTkTextbox(master=app, width=600, height=170)
             text_1.grid(row=7, column=1, pady=10, padx=10, sticky="nsew")
             text_1.insert("0.0", f"ERROR:\n{e}")
+            write_log(os.getlogin(), f"ERROR:\n{e}")
             help_window.destroy()
             print(f"Error opening email client: {e}")
 
@@ -159,6 +170,7 @@ def export():
     text_1 = customtkinter.CTkTextbox(master=app, width=600, height=170)
     text_1.grid(row=7, column=1, pady=10, padx=10, sticky="n")
     text_1.insert("0.0", f"{fb.space_text}")
+
     try:
         # Open the save file dialog
         file_path = asksaveasfilename(
@@ -170,8 +182,10 @@ def export():
             print(f"Path to report - {file_path}")
         else:
             print("NO filename")
+        write_log(os.getlogin(), f"Export report success")
     except Exception as e:
         text_1.insert("0.0", f"ERROR: \n {e}")
+        write_log(os.getlogin(), f"Export report ERROR:\n{e}")
 
 def check_load_sd_tags():
     global report_to_export
@@ -373,7 +387,7 @@ def check_load_sd_tags():
                 report_to_export.append([l_t, sd_t, ""])
             report_to_export.append(["***", "***", "***"])
 
-
+        write_log(os.getlogin(), f"Checking success! \n {detail_res}")
 
         text_1.insert("0.0", f"{detail_res}")
         progress_bar.grid_forget()
@@ -382,6 +396,7 @@ def check_load_sd_tags():
 
     except Exception as e:
         text_1.insert("0.0", f"ERROR: \n {e}")
+        write_log(os.getlogin(), f"Checking ERROR:\n{e}")
         progress_bar.grid_forget()
 
 
@@ -395,6 +410,7 @@ def check_load_sd_tags():
 
     return
 def start_checking():
+    write_log(os.getlogin(), f"Start checking...")
     text_1.destroy()
     btn_check_tags.configure(state=tkinter.DISABLED)
     btn_fill_tags.configure(state=tkinter.DISABLED)
@@ -532,13 +548,18 @@ def fill_sd_tags():
         btn_export_report.configure(state=tkinter.NORMAL)
         btn_fill_tags.configure(state=tkinter.NORMAL)
 
+        write_log(os.getlogin(), f"Filling tags success! \n {detail_res}")
+
     except Exception as e:
-        text_1.insert("0.0", f"{e}")
+        text_1.insert("0.0", f"ERROR: {e}")
+        write_log(os.getlogin(), f"Filling tags ERROR: {e}")
+
         progress_bar.grid_forget()
 
 
     return
 def start_fill():
+    write_log(os.getlogin(), f"Start filling tags...")
     text_1.destroy()
     confirmation_res = confirmation()
     if confirmation_res == 1:

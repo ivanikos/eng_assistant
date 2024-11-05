@@ -1,4 +1,5 @@
 import os
+from datetime import datetime
 
 import pandas as pd
 from pyautocad import Autocad, APoint
@@ -90,34 +91,13 @@ def export_report(report, filename):
     print("Success")
     return
 
-#
-# report_list = [['Working file name: \n C:\\Users\\ivaign\\OneDrive - United Conveyor Corp\\Documents\\Python_Projects\\C-54880-13-078-079(TESTING).dwg', '', ''],
-#                 ['***', '***', '***'],
-#                 ['Checking SD-TAGs complete!', '', ''],
-#                 ['Checked tags - 104', '', ''],
-#                 ['Correct load + SD-tags - 99', '', ''],
-#                 ['Possible to fill SD-tags - 0', '', ''],
-#                 ['Waiting for load tags - 1', '', ''],
-#                 ['Waiting for SD-tags - 1', '', ''],
-#                 ['Wrong load tags - 3', '', ''],
-#                 ['Wrong SD-tags - 0 ', '', ''],
-#                 ['***', '***', '***'],
-#                 ['DETAIL CHECKING RESULT:', '', ''],
-#                 ['Load tags does not exist:', '', ''],
-#                 ['Actual load tag', 'Actual SD tag', ''],
-#                 ['n/a ', ' LATER', ''],
-#                 ['P800_WRONG ', ' LATER', ''],
-#                 [' ', ' LATER', ''],
-#                 ['***', '***', '***'],
-#                 ['Load tag - LATER:', '', ''],
-#                 ['Actual load tag', 'Actual SD tag', ''],
-#                 ['LATER ', ' LATER', ''],
-#                 ['***', '***', '***'],
-#                 ['SD tag does not exist yet:', '', ''],
-#                 ['Actual load tag', 'Actual SD tag', ''],
-#                 ['P800440', 'SD-547', ''],
-#                 ['***', '***', '***'],
-#                 ['Correct load + SD tags:', '', ''],
-#                 ['Actual load tag', 'Actual SD tag', '']]
-#
-# export_report("tast", report_list)
+def write_log(user_name, message):
+    log_path = r"N:\Piping\_H_PPSE Users\IvaIgn\PSV\logs\\"
+
+    log_file_path = f"{log_path}{user_name}_log.txt"
+    current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+    log_entry = f"{current_time} - {message}\n"
+
+    with open(log_file_path, "a") as log_file:
+        log_file.write(log_entry)
