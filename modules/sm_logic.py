@@ -6,12 +6,12 @@ import os
 """Draft for migration tool for Plant 3D specs"""
 
 # Path to the original zip file
-path_to_spec = r"C:\Users\ivaign\OneDrive - United Conveyor Corp\Documents\Python_Projects\reference files\SubSYS_L.pspx"
+# path_to_spec = r"C:\Users\ivaign\OneDrive - United Conveyor Corp\Documents\Python_Projects\reference files\SubSYS_L.pspx"
 
 
 
 def change_spec_paths(spec_path):
-    temp_zip_path = f"{os.getcwd()}\spec_temp.zip"  # Temporary file for the new zip
+    temp_zip_path = f"{os.getcwd()}\\spec_temp.zip"  # Temporary file for the new zip
 
     # Open the original zip file and create a new zip file
     with zipfile.ZipFile(spec_path, 'r') as zip_ref, zipfile.ZipFile(temp_zip_path, 'w') as new_zip:
@@ -47,6 +47,26 @@ def change_spec_paths(spec_path):
     # Replace the original zip with the modified zip
     os.replace(temp_zip_path, spec_path)
 
-print("XML file modified and saved back into the zip archive.")
+def get_pcat_list(spec_path):
+    pcat_list = []
+    original_pcat_list = []
 
-change_spec_paths(path_to_spec)
+    with zipfile.ZipFile(spec_path, 'r') as zip_ref:
+        # Iterate through all files in the original zip
+        for item in zip_ref.infolist():
+            # If the current file is CatalogReferences.xml, modify it
+            if item.filename == 'editor/CatalogReferences.xml':
+                # Extract the XML file into memory
+                with zip_ref.open(item.filename) as xml_file:
+                    tree = ET.parse(xml_file)
+                    root = tree.getroot()
+                    for elem in root.iter():
+                        # Make modifications to the XML (example: modify tag)
+                        if "pcat" in elem.text:
+                            pcat_name = elem.text.split("\\")[-1]
+                            old_pcat_path = elem.text.strip()
+                            pcat_list.append(old_pcat_path)
+                            original_pcat_list.append(old_pcat_path)
+    return [pcat_list, original_pcat_list]
+
+
