@@ -10,7 +10,7 @@ import os
 
 
 
-def change_spec_paths(spec_path):
+def change_spec_paths(spec_path, pcat_paths):
     temp_zip_path = f"{os.getcwd()}\\spec_temp.zip"  # Temporary file for the new zip
 
     # Open the original zip file and create a new zip file
@@ -30,6 +30,7 @@ def change_spec_paths(spec_path):
                             pcat_name = elem.text.split("\\")[-1]
                             old_pcat_path = elem.text.strip()
                             print(pcat_name, old_pcat_path)
+                            print(pcat_paths[pcat_name])
 
                             # elem.text = elem.text.replace("TEST", "TEST 0002")
 

@@ -1,52 +1,36 @@
-import zipfile
-import xml.etree.ElementTree as ET
-from io import BytesIO
+import win32com.client
 import os
 
-"""Draft for migration tool for Plant 3D specs"""
+dwg_file = r"C:\Users\ivaign\OneDrive - United Conveyor Corp\Documents\Python_Projects\Testing Area\C-54880-13-(TESTING).dwg"
 
-# Path to the original zip file
-path_to_spec = r"C:\Users\ivaign\OneDrive - United Conveyor Corp\Documents\Python_Projects\reference files\SubSYS_L.pspx"
+#
+#
+# def read_dwg_with_objectdbx(file_path):
+#     try:
+#         # Create an ObjectDBX application object
+#         dbx = win32com.client.Dispatch("ObjectDBX.AxDbDocument.26")  # Version may vary
+#
+#         # Open the DWG file in the background
+#         dbx.Open(file_path)
+#
+#         # Access blocks in the drawing
+#         for block in dbx.Blocks:
+#             print(f"Block Name: {block.Name}")
+#
+#         # Access layers in the drawing
+#         for layer in dbx.Layers:
+#             print(f"Layer Name: {layer.Name}")
+#
+#         # Close the document after processing
+#         dbx.Close()
+#
+#     except Exception as e:
+#         print(f"Error accessing {file_path}: {e}")
+#
+# # Example usage
+# read_dwg_with_objectdbx(dwg_file)
 
-
-
-def change_spec_paths(spec_path):
-    temp_zip_path = f"{os.getcwd()}\spec_temp.zip"  # Temporary file for the new zip
-
-    # Open the original zip file and create a new zip file
-    with zipfile.ZipFile(spec_path, 'r') as zip_ref, zipfile.ZipFile(temp_zip_path, 'w') as new_zip:
-        # Iterate through all files in the original zip
-        for item in zip_ref.infolist():
-            # If the current file is CatalogReferences.xml, modify it
-            if item.filename == 'editor/CatalogReferences.xml':
-                # Extract the XML file into memory
-                with zip_ref.open(item.filename) as xml_file:
-                    tree = ET.parse(xml_file)
-                    root = tree.getroot()
-                    for elem in root.iter():
-
-                    # Make modifications to the XML (example: modify tag)
-                        if "pcat" in elem.text:
-                            pcat_name = elem.text.split("\\")[-1]
-                            old_pcat_path = elem.text.strip()
-                            print(pcat_name, old_pcat_path)
-
-                            # elem.text = elem.text.replace("TEST", "TEST 0002")
-
-                    # Save the modified XML into a BytesIO object
-                    modified_xml = BytesIO()
-                    tree.write(modified_xml, encoding='utf-8', xml_declaration=True)
-                    modified_xml.seek(0)
-
-                    # Write the modified XML back to the new zip
-                    new_zip.writestr(item.filename, modified_xml.getvalue())
-            else:
-                # For all other files, copy them as-is into the new zip
-                new_zip.writestr(item.filename, zip_ref.read(item.filename))
-
-    # Replace the original zip with the modified zip
-    os.replace(temp_zip_path, spec_path)
-
-print("XML file modified and saved back into the zip archive.")
-
-change_spec_paths(path_to_spec)
+try:
+    obj_dbx = win32com.client.Dispatch("ObjectDBX.AxDbDocument.25")  # Adjust "25" for version 2025
+except Exception as e:
+    print(f"Error initializing ObjectDBX: {e}")
