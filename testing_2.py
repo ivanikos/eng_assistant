@@ -1,149 +1,640 @@
+# import sys, io
+#
+# buffer = io.StringIO()
+# sys.stdout = sys.stderr = buffer
 import os
-import sqlite3
-import xlsxwriter
+import tkinter
+import tkinter.messagebox
+import customtkinter
+import tkinterdnd2
+import threading
+from tkinter.filedialog import askopenfile, asksaveasfilename
+from CTkMessagebox import CTkMessagebox
+from CTkMenuBar import *
 
-# Specify the path to your .pspx file
-file_path = r"C:\Users\ivana\Documents\Plant 3D files\_PLANT 3D 2025 IMPERIAL TEMPLATE\Spec Sheets"
+import win32com.client
 
-summary_specs = []
+from modules import fill_block as fb
+from modules.logics import read_tags_pd
+from modules.logics import draw_marker
+from modules.logics import export_report
+from modules.logics import write_log
+from modules.logics import pre_check
 
-for spec_file in os.listdir(file_path):
-    if ".pspc" in spec_file:
-        print(spec_file)
+customtkinter.set_ctk_parent_class(tkinterdnd2.Tk)
+
+customtkinter.set_appearance_mode("dark")  # Modes: "System" (standard), "Dark", "Light"
+customtkinter.set_default_color_theme("blue")  # Themes: "blue" (standard), "green", "dark-blue"
+
+app = customtkinter.CTk()
+app.geometry("600x570")
+app.title("Pipe Support Verifier v.0.07")
+app.iconbitmap(r'./icons/icon.ico')
+app.grid_columnconfigure(1, weight=1)
+
+"""Browse file dialog"""
+content = "Choose tag-list..."
+def open_file():
+    global content
+    file = askopenfile(mode="r")  # there is an option to choose only .xlsx- filetypes=[("Excel Files", "*.xlsx")]
+    if file is not None:
+        content = file.name
+        print(content)
+        file_name = customtkinter.CTkLabel(master=frame_1, text=f"{content}", wraplength=300)
+        file_name.grid(row=2, column=0, pady=10, padx=0.5)
+
+        write_log(os.getlogin(), f"File is opened - {content}")
+
+    return content
+
+def confirmation():
+    # res = tkinter.messagebox.askquestion("Fill tags", "Do you really want to fill all SD-tags?")
+    msg_box_confirmation = CTkMessagebox(title="Confirmation", message="Do you really want to fill all tags?",
+                                         option_1="Cancel", option_2="Yes")
+    user_response = msg_box_confirmation.get()
+    if user_response == "Yes":
+        write_log(os.getlogin(), f"Filling confirmation - 'YES'")
+        return 1
+    else:
+        write_log(os.getlogin(), f"Filling confirmation - 'NO'")
+        return 0
+
+
+def help_menu_action():
+    # Create a new top-level window for help
+    help_window = customtkinter.CTkToplevel(app)
+    help_window.title("Help")
+    help_window.after(250, lambda: help_window.iconbitmap(r'./icons/icon.ico'))
+    help_window.geometry("530x240")  # Set the desired window size
+    help_window.grid_columnconfigure(1, weight=1)
+    help_window.resizable(False, False)
+    # help_window.focus_force()
+    # Help message content
+    help_window.attributes('-topmost', True)
+
+    help_message = (
+        "For detailed instructions on using the application, please refer to the User Guide.\n\n\n"
+        "If you encounter any issues or have feedback, please contact us at:\n\n"
+        "ivanignatenko@uccenvironmental.com"
+    )
+
+    frame_help = customtkinter.CTkFrame(master=help_window, corner_radius=10)
+    frame_help.grid(row=0, column=1, rowspan=4, sticky="nsew", pady=10, padx=10)
+
+    label_top = customtkinter.CTkLabel(master=frame_help, text="Pipe Support Verifier v0.04 (alpha test)",
+                                     font=customtkinter.CTkFont(size=20, weight="bold"))
+    label_top.grid(pady=10, padx=10, sticky="nsew")
+
+    label_mid = customtkinter.CTkLabel(master=frame_help, text=f"{help_message}",
+                                     font=customtkinter.CTkFont(size=14))
+    label_mid.grid(pady=10, padx=10, sticky="nsew")
+
+    guide_path = r"N:\Piping\_H_PPSE Users\IvaIgn\PSV\Pipe Support Verifier User Guide.pdf"
+
+    write_log(os.getlogin(), f"HELP button was pushed")
+
+    def open_user_guide():
+        # Open the user guide PDF
         try:
-            # Connect to the SQLite database
-            connection = sqlite3.connect(f"{file_path}\\{spec_file}")
-            cursor = connection.cursor()
+            os.startfile(guide_path)
+            write_log(os.getlogin(), f"Guide opened")
+        except Exception as e:
+            text_1 = customtkinter.CTkTextbox(master=app, width=600, height=170)
+            text_1.grid(row=7, column=1, pady=10, padx=10, sticky="nsew")
+            text_1.insert("0.0", f"ERROR:\n{e}")
+            help_window.destroy()
+            write_log(os.getlogin(), f"ERROR:\n{e}")
+            print(f"Error opening user guide: {e}")
 
-            cursor.execute(f"SELECT * FROM 'EngineeringItems';")  # Adjust LIMIT as needed
-            rows = cursor.fetchall()
+    def open_email():
+        # Open the default email client with a new message
+        email_address = "ivanignatenko@uccenvironmental.com"
+        try:
+            write_log(os.getlogin(), f"MAIL TO SUPPORT")
+            os.startfile(f"mailto:{email_address}")
+            help_window.destroy()
+        except Exception as e:
+            text_1 = customtkinter.CTkTextbox(master=app, width=600, height=170)
+            text_1.grid(row=7, column=1, pady=10, padx=10, sticky="nsew")
+            text_1.insert("0.0", f"ERROR:\n{e}")
+            write_log(os.getlogin(), f"ERROR:\n{e}")
+            help_window.destroy()
+            print(f"Error opening email client: {e}")
 
-            column_names = [description[0] for description in cursor.description]
-            # print(len(column_names))
+    # Create action buttons
+    contact_button = customtkinter.CTkButton(frame_help, text="Contact Us", command=open_email)
+    contact_button.grid(row=4, column=0, padx=10, pady=5, sticky="s")
 
-            if len(column_names) == 42:
-                summary_specs.append(
-                    [column_names[0], column_names[3], column_names[5], column_names[6], column_names[7],
-                     column_names[9], column_names[10], column_names[11], column_names[16], column_names[18],
-                     column_names[19], column_names[20], column_names[21], column_names[22], column_names[23],
-                     column_names[24], column_names[25], column_names[26], column_names[27], column_names[28],
-                     column_names[29], column_names[30], column_names[31], column_names[32], column_names[33],
-                     column_names[34], column_names[38], column_names[39], column_names[40],
-                     "None", "None", "Spec_Sheet"])
+    guide_button = customtkinter.CTkButton(frame_help, text="Open User Guide", command=open_user_guide)
+    guide_button.grid(row=4, column=0, padx=10, pady=5, sticky="w")
 
-                for row in rows:
-                    summary_specs.append(
-                        [row[0], row[3], row[5], row[6], row[7],
-                         row[9], row[10], row[11], row[16], row[18],
-                         row[19], row[20], row[21], row[22], row[23],
-                         row[24], row[25], row[26], row[27], row[28],
-                         row[29], row[30], row[31], row[32], row[33],
-                         row[34], row[38], row[39], row[40],
-                         "None", "None", spec_file])
+    close_button = customtkinter.CTkButton(frame_help, text="Close", command=help_window.destroy)
+    close_button.grid(row=4, column=0, padx=10, pady=5, sticky="e")
 
+    return
+
+report_to_export = []
+handles_to_edit = []
+
+user_name = os.getlogin()
+frame_1 = customtkinter.CTkFrame(master=app, corner_radius=10)
+frame_1.grid(row=0, column=1, rowspan=4, sticky="nsew", pady=10, padx=10)
+
+label_1 = customtkinter.CTkLabel(master=frame_1, text="Choose Pipe Support List for project:",
+                                    font=customtkinter.CTkFont(size=20, weight="bold"))
+label_1.grid(pady=10, padx=10, sticky="nsew")
+
+browse_button = customtkinter.CTkButton(master=frame_1, fg_color="transparent", border_width=2,
+                                                     text="Browse file", text_color=("gray10", "#DCE4EE"),
+                                                     command=open_file)
+browse_button.grid(row=2, column=2, padx=(20, 20), pady=(20, 20), sticky="nsew")
+file_name = customtkinter.CTkLabel(master=frame_1, text=f"{content}")
+file_name.grid(row=2, column=0, pady=10, padx=1)
+
+
+frame_2 = customtkinter.CTkFrame(master=app, corner_radius=10)
+frame_2.grid(row=4, column=1, rowspan=3, sticky="nsew", pady=10, padx=10)
+button_definition_label = customtkinter.CTkLabel(master=frame_2, justify='left', text='"Check tags" button - check if                     "Fill tags" button is available\n'
+                                                                  'load tags match SD-tags in the                    only after using the "Checking" feature\n'
+                                                                  'pipe support list')
+button_definition_label.grid(row=4, column=0, pady=10, padx=30, sticky="w")
+
+progress_bar = customtkinter.CTkProgressBar(master=app, width=200)
+progress_bar.set(0)
+progress_bar.grid_forget()
+
+# Create a Menu Bar (from tkinter)
+file_menu = CTkTitleMenu(master=app)
+file_menu.add_cascade("Help", command=help_menu_action)
+
+
+def export():
+    text_1 = customtkinter.CTkTextbox(master=app, width=600, height=170)
+    text_1.grid(row=7, column=1, pady=10, padx=10, sticky="n")
+    text_1.insert("0.0", f"{fb.space_text}")
+
+    try:
+        # Open the save file dialog
+        file_path = asksaveasfilename(
+            defaultextension=".txt",  # Default file extension
+            filetypes=[("Excel files", "*.xlsx")]
+        )
+        if file_path:
+            export_report(report_to_export, file_path)
+            print(f"Path to report - {file_path}")
+        else:
+            print("NO filename")
+        write_log(os.getlogin(), f"Export report success")
+    except Exception as e:
+        text_1.insert("0.0", f"ERROR: \n {e}")
+        write_log(os.getlogin(), f"Export report ERROR:\n{e}")
+
+def check_load_sd_tags():
+    global report_to_export
+    global handles_to_edit
+    handles_to_edit = []
+    report_to_export = []
+
+    all_load_tags = []
+    correct_tags = []
+    wrong_load_tags = []
+    wrong_sd_tags = []
+    possible_to_fill = []
+    waiting_load_tag = []
+    waiting_sd_tag = []
+    duplicated_load_tags = {}
+
+    text_1.delete("1.0", "end-1c")
+    # text_1.insert("0.0", f"{fb.space_text}")
+
+    try:
+        acad = win32com.client.Dispatch("AutoCAD.Application")
+        doc = acad.ActiveDocument  # Document object
+        doc_filename = doc.FullName
+        tag_list = read_tags_pd(content)
+
+        progress_bar.grid(row=8, column=1, pady=10, padx=10)
+        progress_bar.set(0)
+        progress = 0
+        full_progress = len(acad.ActiveDocument.PaperSpace) - 1
+        all_checked_tags = 0
+
+        print(doc_filename)
+        print("Blocks - ", len(doc.Blocks))
+        print("Paperspace - ",len(acad.ActiveDocument.PaperSpace))
+
+        for entity in acad.ActiveDocument.PaperSpace:
+            name = entity.EntityName
+
+            progress_percentage = progress / full_progress
+            progress_bar.set(progress_percentage)
+            app.update_idletasks()
+
+            progress += 1
+            if name == 'AcDbBlockReference':
+                HasAttributes = entity.HasAttributes
+                if HasAttributes:
+                    load_tag = "n/a"
+                    for attrib in entity.GetAttributes():
+                        if "DWGNO" in attrib.TagString:
+                            print(attrib.TextString.strip())
+
+                        if "TAG" in attrib.TagString:
+                            load_tag = attrib.TextString.strip()
+                            if load_tag.upper() != "LATER":
+                                all_load_tags.append(load_tag.strip())
+
+                        if "DRAWING" in attrib.TagString and attrib.TextString:
+                            # print(load_tag, attrib.TextString)
+                            all_checked_tags += 1
+                            sd_tag = str(attrib.TextString).strip()
+                            try:
+                                if load_tag.upper() == "LATER":
+                                    waiting_load_tag.append(f"{load_tag} - {sd_tag}")
+                                elif load_tag in tag_list.keys() and tag_list[load_tag]:
+                                    if tag_list[load_tag] and sd_tag.upper() == "LATER":
+                                        possible_to_fill.append(f"{load_tag} - {sd_tag} - in the support list - "
+                                                                    f"{tag_list[load_tag]}")
+                                        handles_to_edit.append(entity.Handle)
+                                    elif tag_list[load_tag] and sd_tag.upper() != "LATER":
+                                        if tag_list[load_tag].strip() == sd_tag.strip():
+                                            correct_tags.append(f"{load_tag} - {sd_tag} - correct")
+                                        else:
+                                            wrong_sd_tags.append(f"{load_tag} - {sd_tag} - INcorrect - in the support list "
+                                                                 f"- {tag_list[load_tag]}")
+                                            handles_to_edit.append(entity.Handle)
+                                    else:
+                                        print(f"ELSE - {load_tag} - {sd_tag}")
+                                        write_log(os.getlogin(), f"ELSE - {load_tag} - {sd_tag}")
+                                elif load_tag in tag_list.keys() and not tag_list[load_tag]:
+                                    waiting_sd_tag.append(f"{load_tag} - {sd_tag} - wait sd-tag")
+                                else:
+                                    wrong_load_tags.append(f"{load_tag.strip().replace("-", "n/a")} - {sd_tag} - need to double check LOAD TAG")
+                            except Exception as e:
+                                print(e)
             else:
-                summary_specs.append([column_names[0], column_names[3], column_names[5], column_names[6], column_names[7],
-                                      column_names[9], column_names[10], column_names[11], column_names[16], column_names[18],
-                                      column_names[19], column_names[20], column_names[21], column_names[22], column_names[23],
-                                      column_names[24], column_names[25], column_names[26], column_names[27], column_names[28],
-                                      column_names[29], column_names[30], column_names[31], column_names[32], column_names[33],
-                                      column_names[34], column_names[38], column_names[39], column_names[40],
-                                      column_names[42], column_names[43], "Spec_Sheet"])
+                continue
 
-                for row in rows:
-                    summary_specs.append(
-                        [row[0], row[3], row[5], row[6], row[7],
-                         row[9], row[10], row[11], row[16], row[18],
-                         row[19], row[20], row[21], row[22], row[23],
-                         row[24], row[25], row[26], row[27], row[28],
-                         row[29], row[30], row[31], row[32], row[33],
-                         row[34], row[38], row[39], row[40],
-                         row[42], row[43], spec_file])
+        # checking for duplicates
+        for tag in all_load_tags:
+            if all_load_tags.count(tag) > 1:
+                duplicated_load_tags[tag] = all_load_tags.count(tag)
 
-            connection.close()
+        # preparing to export report
+        report_to_export.append([f"Working file name: \n {doc_filename}", "", ""])
+        report_to_export.append(["***", "***", "***"])
+        report_to_export.append([f"Checking SD-TAGs complete!", "", ""])
+        report_to_export.append([f"Checked tags - {all_checked_tags}", "", ""])
+        report_to_export.append([f"Correct load + SD-tags - {len(correct_tags)}", "", ""])
+        report_to_export.append([f"Possible to fill SD-tags - {len(possible_to_fill)}", "", ""])
+        report_to_export.append([f"Waiting for load tags - {len(waiting_load_tag)}", "", ""])
+        report_to_export.append([f"Waiting for SD-tags - {len(waiting_sd_tag)}", "", ""])
+        report_to_export.append([f"Wrong load tags - {len(wrong_load_tags)}", "", ""])
+        report_to_export.append([f"Wrong SD-tags - {len(wrong_sd_tags)} ", "", ""])
+        report_to_export.append(["***", "***", "***"])
+        report_to_export.append(["DETAIL CHECKING RESULT:", "", ""])
 
-        except sqlite3.Error as e:
-            print(f"SQLite error: {e}")
-
-
-
-workbook_summary = xlsxwriter.Workbook(r"C:\Users\ivana\Documents\Plant 3D files\spec_summary.xlsx")
-# -------------------------------------Краткая сводка
-ws0 = workbook_summary.add_worksheet('spec_summary')
-ws0.set_column(0, 2, 25)
-ws0.set_row(0, 45)
-# ws0.set_column(1, 1, 40)
-# ws0.set_column(4, 15, 12)
-# ws0.set_column(2, 2, 12)
-# ws0.set_column(3, 3, 12)
-
-cell_format_green = workbook_summary.add_format()
-cell_format_green.set_bg_color('#6c8784')
-cell_format_blue = workbook_summary.add_format()
-cell_format_blue.set_bg_color('#b0dacc')
-cell_format_hat = workbook_summary.add_format()
-cell_format_hat.set_bg_color('#65878f')
-cell_format_filename = workbook_summary.add_format()
-cell_format_filename.set_bg_color('#f8e8b5')
+        # summarize detail result text
+        result_overview = f"Working file name: \n {doc_filename}\n\n" \
+                f"Checking SD-TAGs complete! \n" \
+                f"Checked tags - {all_checked_tags}\n" \
+                f"Correct load + SD-tags - {len(correct_tags)}\n" \
+                f"Possible to fill SD-tags - {len(possible_to_fill)}\n" \
+                f"Waiting for load tags - {len(waiting_load_tag)}\n" \
+                f"Waiting for SD-tags - {len(waiting_sd_tag)}\n" \
+                f"Wrong load tags - {len(wrong_load_tags)}\n" \
+                f"Duplicated load-tags - {len(duplicated_load_tags.keys())} \n" \
+                f"Wrong SD-tags - {len(wrong_sd_tags)} \n\n" \
 
 
-for i, (a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20, a21,
-        a22, a23, a24, a25, a26, a27, a28, a29, a30, a31, a32) in enumerate(summary_specs, start=1):
-    color = cell_format_blue
-    # if "Working" in one:
-    #     color = cell_format_filename
-    #     color.set_text_wrap(text_wrap=1)
-    #     ws0.merge_range('A1:C1', one, color)
-    #     continue
-    # if "***" in one:
-    #     color = cell_format_green
-    #
-    # if "Checking SD-TAGs complete" in one or \
-    #     "DETAIL CHECKING" in one or "Load tags does" in one or "SD tag" in one:
-    #     color.set_text_wrap(text_wrap=1)
-    #     color = cell_format_hat
-    # try:
-    #     color.set_border(style=1)
-    #     color.set_text_wrap(text_wrap=1)
-    # except:
-    #     pass
+        detail_res = result_overview + "DETAIL CHECKING RESULT:\n"
 
-    ws0.write(f'A{i}', a1, color)
-    ws0.write(f'B{i}', a2, color)
-    ws0.write(f'C{i}', a3, color)
-    ws0.write(f'D{i}', a4, color)
-    ws0.write(f'E{i}', a5, color)
-    ws0.write(f'F{i}', a6, color)
-    ws0.write(f'G{i}', a7, color)
-    ws0.write(f'H{i}', a8, color)
-    ws0.write(f'I{i}', a9, color)
-    ws0.write(f'J{i}', a10, color)
-    ws0.write(f'K{i}', a11, color)
-    ws0.write(f'L{i}', a12, color)
-    ws0.write(f'M{i}', a13, color)
-    ws0.write(f'N{i}', a14, color)
-    ws0.write(f'O{i}', a15, color)
-    ws0.write(f'P{i}', a16, color)
-    ws0.write(f'Q{i}', a17, color)
-    ws0.write(f'R{i}', a18, color)
-    ws0.write(f'S{i}', a19, color)
-    ws0.write(f'T{i}', a20, color)
-    ws0.write(f'U{i}', a21, color)
-    ws0.write(f'V{i}', a22, color)
-    ws0.write(f'W{i}', a23, color)
-    ws0.write(f'X{i}', a24, color)
-    ws0.write(f'Y{i}', a25, color)
-    ws0.write(f'Z{i}', a26, color)
-    ws0.write(f'AA{i}', a27, color)
-    ws0.write(f'AB{i}', a28, color)
-    ws0.write(f'AC{i}', a29, color)
-    ws0.write(f'AD{i}', a30, color)
-    ws0.write(f'AE{i}', a31, color)
-    ws0.write(f'AF{i}', a32, color)
+        if wrong_load_tags:
+            detail_res += "\nLoad tags does not exist: \n"
+            report_to_export.append(["Load tags does not exist:", "", ""])
+            report_to_export.append(["Actual load tag", "Actual SD tag", ""])
+            for i in wrong_load_tags:
+                detail_res = detail_res + f"{i}, \n"
+                l_t = i.replace(" - need to double check LOAD TAG", "").split("-")[0]
+                sd_t = i.replace(" - need to double check LOAD TAG", "").split("-")[1]
+                report_to_export.append([l_t, sd_t, ""])
+            report_to_export.append(["***", "***", "***"])
 
-workbook_summary.close()
+        if wrong_sd_tags:
+            detail_res += "\nWrong SD-tags: \n"
+            report_to_export.append(["SD tags does not match:", "", ""])
+            report_to_export.append(["Actual load tag", "Actual SD tag", "SD tag in pipe support list"])
+            for i in wrong_sd_tags:
+                detail_res = detail_res + f"{i}, \n"
+                l_t = i.replace("- INcorrect - in the support list", "") \
+                    .replace(" - ", "&").split("&")[0]
+                sd_t = i.replace("- INcorrect - in the support list", "") \
+                    .replace(" - ", "&").split("&")[1]
+                csd_t = i.replace("- INcorrect - in the support list", "") \
+                    .replace(" - ", "&").split("&")[2]
+                report_to_export.append([l_t, sd_t, csd_t])
+            report_to_export.append(["***", "***", "***"])
+
+        if duplicated_load_tags.keys():
+            detail_res += "\nDuplicated load-tags: \n"
+            report_to_export.append(["Load tags exist more than one time:", "", ""])
+            report_to_export.append(["Actual load tag", "Number of duplicates", ""])
+            for i in duplicated_load_tags.keys():
+                detail_res = detail_res + f"Load tag - {i} - number of duplicates - {duplicated_load_tags[i]}, \n"
+                l_t = i
+                sd_t = duplicated_load_tags[i]
+                csd_t = ""
+                report_to_export.append([l_t, sd_t, csd_t])
+            report_to_export.append(["***", "***", "***"])
+
+        if possible_to_fill:
+            detail_res += "\nPossible to fill tags: \n"
+            report_to_export.append(["Tags ready to fill:", "", ""])
+            report_to_export.append(["Actual load tag", "Actual SD tag", "SD tag in pipe support list"])
+            for i in possible_to_fill:
+                detail_res = detail_res + f"{i}, \n"
+                # .replace("- in the support list", "").replace(" - ", "&").split("&"))
+                l_t = i.replace("- in the support list", "").replace(" - ", "&").split("&")[0]
+                sd_t = i.replace("- in the support list", "").replace(" - ", "&").split("&")[1]
+                csd_t = i.replace("- in the support list", "").replace(" - ", "&").split("&")[2]
+                report_to_export.append([l_t, sd_t, csd_t])
+            report_to_export.append(["***", "***", "***"])
+
+        if waiting_load_tag:
+            detail_res += "\nWaiting for load tags: \n"
+            report_to_export.append(["Load tag - LATER:", "", ""])
+            report_to_export.append(["Actual load tag", "Actual SD tag", ""])
+            for i in waiting_load_tag:
+                detail_res = detail_res + f"{i}, \n"
+                l_t = i.split("-")[0]
+                sd_t = i.split("-")[1]
+                report_to_export.append([l_t, sd_t, ""])
+            report_to_export.append(["***", "***", "***"])
+
+        if waiting_sd_tag:
+            detail_res += "\nWaiting for sd tags: \n"
+            report_to_export.append(["SD tag does not exist yet:", "", ""])
+            report_to_export.append(["Actual load tag", "Actual SD tag", ""])
+            for i in waiting_sd_tag:
+                detail_res = detail_res + f"{i}, \n"
+                l_t = i.replace(" - ", "&").split("&")[0]
+                sd_t = i.replace(" - ", "&").split("&")[1]
+                report_to_export.append([l_t, sd_t, ""])
+            report_to_export.append(["***", "***", "***"])
+
+        if correct_tags:
+            detail_res += "\nCorrect tags: \n"
+            report_to_export.append(["Correct load + SD tags:", "", ""])
+            report_to_export.append(["Actual load tag", "Actual SD tag", ""])
+            for i in correct_tags:
+                detail_res = detail_res + f"{i}, \n"
+                l_t = i.split(" - ")[0]
+                sd_t = i.split(" - ")[1]
+                report_to_export.append([l_t, sd_t, ""])
+            report_to_export.append(["***", "***", "***"])
+
+        write_log(os.getlogin(), f"Checking success! \n {detail_res}")
+
+        text_1.insert("0.0", f"{detail_res}")
+        progress_bar.grid_forget()
+        btn_export_report.configure(state=tkinter.NORMAL)
+        btn_fill_tags.configure(state=tkinter.NORMAL)
+
+        del acad
+
+    except Exception as e:
+        text_1.insert("0.0", f"ERROR: \n {e}")
+        write_log(os.getlogin(), f"Checking ERROR:\n{e}")
+        progress_bar.grid_forget()
 
 
-print(len(summary_specs))
-# for i in summary_specs:
-#     print(i)
+
+    # print("correct tags - ", correct_tags)
+    # print("wrong load tags - ", wrong_load_tags)
+    # print("wrong sd tags - ", wrong_sd_tags)
+    # print("possible to fill tags - ", possible_to_fill)
+    # print("waiting load tags - ", waiting_load_tag)
+    # print("waiting sd tags - ", waiting_sd_tag)
+
+    return
+def start_checking():
+    pre_check_status = pre_check()
+    print(pre_check_status)
+
+    text_1.delete("1.0", "end-1c")
+    if pre_check_status == 1:
+        if content != "Choose tag-list...":
+            write_log(os.getlogin(), f"Start checking...")
+            text_1.delete("1.0", "end-1c")
+            btn_check_tags.configure(state=tkinter.DISABLED)
+            btn_fill_tags.configure(state=tkinter.DISABLED)
+            btn_export_report.configure(state=tkinter.DISABLED)
+            thread = threading.Thread(target=check_load_sd_tags)
+            print(threading.main_thread().name)
+            print(thread.name)
+            thread.start()
+            check_thread(thread)
+        else:
+            text_1.delete("1.0", "end-1c")
+            text_1.insert("0.0", f"ERROR: Please choose Pipe Support list")
+    else:
+        text_1.delete("1.0", "end-1c")
+        text_1.insert("0.0", f"ERROR: {pre_check_status}")
+    return
+
+def fill_sd_tags():
+    global report_to_export
+    global handles_to_edit
+    report_to_export = []
+
+    filled_tags = []
+    wrong_load_tags = []
+    left_tags = []
+
+    draw_check_box = rev_circle_check_box.get()
+
+    text_1.delete("1.0", "end-1c")
+    # text_1.insert("0.0", f"{fb.space_text}")
+
+    try:
+        acad = win32com.client.Dispatch("AutoCAD.Application")
+
+        doc = acad.ActiveDocument  # Document object
+        doc_filename = doc.FullName
+        tag_list = read_tags_pd(content)
+
+        progress_bar.grid(row=8, column=1, pady=10, padx=10)
+        progress_bar.set(0)
+        progress = 0
+        count_filled_tags = 0
+        count_not_filled_tags = 0
+
+        full_progress = len(acad.ActiveDocument.PaperSpace) - 1
+        full_progress = len(handles_to_edit) - 1
+
+        for handle_id in handles_to_edit:
+            target_entity = doc.HandleToObject(f"{handle_id}")
+
+            # Getting scale of block
+            insertion_point = target_entity.InsertionPoint
+            scale_x = target_entity.XScaleFactor
+            scale_y = target_entity.YScaleFactor
+            scale_z = target_entity.ZScaleFactor
+            coord_list = [float(insertion_point[0]), float(insertion_point[1]), float(insertion_point[2])]
+
+            progress_percentage = progress / full_progress
+            progress_bar.set(progress_percentage)
+            app.update_idletasks()
+
+            progress += 1
+            for attrib in target_entity.GetAttributes():
+                if "TAG" in attrib.TagString:
+                    load_tag = attrib.TextString.strip()
+                if 'DRAWING' in attrib.TagString:
+                    if load_tag not in tag_list.keys():
+                        wrong_load_tags.append(f"{load_tag} - load_tag does not exist")
+                        count_not_filled_tags += 1
+                    try:
+                        if tag_list[load_tag] != "nan" and tag_list[load_tag]:
+                            attrib.TextString = tag_list[load_tag]
+                            attrib.Update()
+
+                            if draw_check_box:
+                                draw_marker(coord_list, 0.2 * float(scale_x), color=4)
+
+                            filled_tags.append(f"{load_tag} - {tag_list[load_tag]} - OK")
+                            count_filled_tags += 1
+                        else:
+                            left_tags.append(f"{load_tag} - waiting sd-tag")
+                            count_not_filled_tags += 1
+                    except Exception as e:
+                        print(e)
+
+
+        # preparing to export report
+        report_to_export.append([f"Working file name: \n {doc_filename}", "", ""])
+        report_to_export.append(["***", "***", "***"])
+        report_to_export.append([f"Filling SD-TAGs complete!", "", ""])
+        report_to_export.append([f"Filled - {count_filled_tags} SD-tags.", "", ""])
+        report_to_export.append([f"NOT Filled - {count_not_filled_tags} SD-tags.", "", ""])
+        report_to_export.append(["***", "***", "***"])
+        report_to_export.append(["DETAIL CHECKING RESULT:", "", ""])
+
+
+        # summarize detail result text
+        result_text = f"Working file name: \n {doc_filename}\n\n" \
+                       f"Filling SD-TAGs complete! \n" \
+                        f"Filled - {count_filled_tags} SD-tags.\n"
+        detail_res = result_text + "\nDETAIL FILLING RESULT:\n"
+
+        if left_tags:
+            detail_res += "\nNOT filled tags: \n"
+            report_to_export.append(["NOT filled tags - waiting SD-tag:", "", ""])
+            report_to_export.append(["Actual load tag", "Actual SD tag", ""])
+            for i in left_tags:
+                detail_res = detail_res + f"{i}, \n"
+                l_t = i.split(" - ")[0]
+                report_to_export.append([l_t, "Waiting SD-tag", ""])
+            report_to_export.append(["***", "***", "***"])
+
+        if wrong_load_tags:
+            detail_res += "\nLoad tags doesn't match support list: \n"
+            report_to_export.append(["Load tags doesn't exist in support list:", "", ""])
+            report_to_export.append(["Actual load tag", "Existing status", ""])
+            for i in wrong_load_tags:
+                detail_res = detail_res + f"{i}, \n"
+                l_t = i.split(" - ")[0]
+                report_to_export.append([l_t, "Check load-tag", ""])
+            report_to_export.append(["***", "***", "***"])
+
+        if filled_tags:
+            detail_res += "\nFilled tags: \n"
+            report_to_export.append(["Filled tags:", "", ""])
+            report_to_export.append(["Actual load tag", "Actual SD tag", "Status"])
+            for i in filled_tags:
+                detail_res = detail_res + f"{i}, \n"
+                l_t = i.split(" - ")[0]
+                sd_t = i.split(" - ")[1]
+                status = i.split(" - ")[2]
+                report_to_export.append([l_t, sd_t, status])
+            report_to_export.append(["***", "***", "***"])
+
+        text_1.insert("0.0", f"{detail_res}")
+        progress_bar.grid_forget()
+        btn_export_report.configure(state=tkinter.NORMAL)
+        btn_fill_tags.configure(state=tkinter.NORMAL)
+
+        write_log(os.getlogin(), f"Filling tags success! \n {detail_res}")
+
+        del acad
+
+    except Exception as e:
+        text_1.insert("0.0", f"ERROR: {e}")
+        write_log(os.getlogin(), f"Filling tags ERROR: {e}")
+
+        progress_bar.grid_forget()
+
+
+    return
+def start_fill():
+    write_log(os.getlogin(), f"Start filling tags...")
+    confirmation_res = confirmation()
+    pre_check_status = pre_check()
+    text_1.delete("1.0", "end-1c")
+    if confirmation_res == 1:
+        if pre_check_status == 1:
+            if content != "Choose tag-list...":
+                btn_fill_tags.configure(state=tkinter.DISABLED)
+                btn_check_tags.configure(state=tkinter.DISABLED)
+                btn_export_report.configure(state=tkinter.DISABLED)
+                thread = threading.Thread(target=fill_sd_tags)
+                print(threading.main_thread().name)
+                print(thread.name)
+                thread.start()
+                check_thread(thread)
+            else:
+                text_1.delete("1.0", "end-1c")
+                text_1.insert("0.0", f"ERROR: Please choose Pipe Support list")
+        else:
+            text_1.delete("1.0", "end-1c")
+            text_1.insert("0.0", f"ERROR: {pre_check_status}")
+    return
+
+def check_thread(thread):
+    if thread.is_alive():
+        app.after(100, lambda: check_thread(thread))
+    else:
+        btn_check_tags.configure(state=tkinter.NORMAL)
+
+
+
+btn_export_report = customtkinter.CTkButton(master=app, command=export, text="Export to .xlsx")
+# btn_export_report = customtkinter.CTkButton(master=app, text="Export to .xlsx")
+btn_export_report.grid(row=8, column=1, padx=30, pady=10, sticky="nw")
+btn_export_report.configure(state=tkinter.DISABLED)
+
+user_name_ui = customtkinter.CTkLabel(master=app, text=f"User: {user_name}",
+                                      font=customtkinter.CTkFont(size=10, weight="bold"))
+user_name_ui.grid(row=8, column=1, padx=30, pady=10, sticky="se")
+
+btn_check_tags = customtkinter.CTkButton(master=frame_2, command=start_checking, text="Check tags")
+btn_check_tags.grid(row=5, column=0, padx=30, pady=10, sticky="w")
+
+btn_fill_tags = customtkinter.CTkButton(master=frame_2, command=start_fill, text="Fill tags")
+btn_fill_tags.grid(row=5, column=0, padx=250, pady=10, sticky="w")
+btn_fill_tags.configure(state=tkinter.DISABLED)
+
+# Add a checkbox
+rev_circle_check_box = customtkinter.BooleanVar(value=True)  # Variable to track checkbox state
+checkbox = customtkinter.CTkCheckBox(master=frame_2, text="Draw a marker on changed tags", variable=rev_circle_check_box)
+checkbox.grid(row=6, column=0, pady=10, padx=250, sticky="w")
+
+text_1 = customtkinter.CTkTextbox(master=app, width=600, height=170)
+text_1.grid(row=7, column=1, pady=10, padx=10, sticky="nsew")
+text_1.insert("0.0", f"DETAILS:")
+
+
+
+
+app.mainloop()
+

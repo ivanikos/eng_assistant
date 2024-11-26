@@ -1,4 +1,6 @@
 import os
+from comtypes.client import *
+from comtypes.automation import *
 from datetime import datetime
 
 import pandas as pd
@@ -102,3 +104,22 @@ def write_log(user_name, message):
     with open(log_file_path, "a") as log_file:
         log_file.write(log_entry)
         log_file.write("\n*************\n")
+
+
+def pre_check():
+    print("pre check")
+    try:
+        acad = comtypes.client.GetActiveObject('AutoCAD.Application', dynamic=True)
+        doc = acad.ActiveDocument  # Document object
+        acad.Visible = True
+        doc_filename = doc.Name
+        print(f"pre check filename {doc_filename}")
+        if "Drawing" not in doc_filename:
+            del acad
+            return 1
+        else:
+            del acad
+            return "Default drawing 'Drawing#.dwg' is active. Please open a valid drawing."
+    except:
+        return "AutoCAD Plant 3D is not currently running or there is no active drawing."
+

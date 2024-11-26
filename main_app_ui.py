@@ -19,6 +19,7 @@ from modules.logics import read_tags_pd
 from modules.logics import draw_marker
 from modules.logics import export_report
 from modules.logics import write_log
+from modules.logics import pre_check
 
 customtkinter.set_ctk_parent_class(tkinterdnd2.Tk)
 
@@ -27,7 +28,7 @@ customtkinter.set_default_color_theme("blue")  # Themes: "blue" (standard), "gre
 
 app = customtkinter.CTk()
 app.geometry("600x570")
-app.title("Pipe Support Verifier v.0.04 (alpha testing)")
+app.title("Pipe Support Verifier v.0.07")
 app.iconbitmap(r'./icons/icon.ico')
 app.grid_columnconfigure(1, weight=1)
 
@@ -203,9 +204,8 @@ def check_load_sd_tags():
     waiting_sd_tag = []
     duplicated_load_tags = {}
 
-    text_1 = customtkinter.CTkTextbox(master=app, width=600, height=170)
-    text_1.grid(row=7, column=1, pady=10, padx=10, sticky="nsew")
-    text_1.insert("0.0", f"{fb.space_text}")
+    text_1.delete("1.0", "end-1c")
+    # text_1.insert("0.0", f"{fb.space_text}")
 
     try:
         acad = win32com.client.Dispatch("AutoCAD.Application")
@@ -400,6 +400,8 @@ def check_load_sd_tags():
         btn_export_report.configure(state=tkinter.NORMAL)
         btn_fill_tags.configure(state=tkinter.NORMAL)
 
+        del acad
+
     except Exception as e:
         text_1.insert("0.0", f"ERROR: \n {e}")
         write_log(os.getlogin(), f"Checking ERROR:\n{e}")
@@ -416,16 +418,28 @@ def check_load_sd_tags():
 
     return
 def start_checking():
-    write_log(os.getlogin(), f"Start checking...")
-    text_1.destroy()
-    btn_check_tags.configure(state=tkinter.DISABLED)
-    btn_fill_tags.configure(state=tkinter.DISABLED)
-    btn_export_report.configure(state=tkinter.DISABLED)
-    thread = threading.Thread(target=check_load_sd_tags)
-    print(threading.main_thread().name)
-    print(thread.name)
-    thread.start()
-    check_thread(thread)
+    pre_check_status = pre_check()
+    print(pre_check_status)
+
+    text_1.delete("1.0", "end-1c")
+    if pre_check_status == 1:
+        if content != "Choose tag-list...":
+            write_log(os.getlogin(), f"Start checking...")
+            text_1.delete("1.0", "end-1c")
+            btn_check_tags.configure(state=tkinter.DISABLED)
+            btn_fill_tags.configure(state=tkinter.DISABLED)
+            btn_export_report.configure(state=tkinter.DISABLED)
+            thread = threading.Thread(target=check_load_sd_tags)
+            print(threading.main_thread().name)
+            print(thread.name)
+            thread.start()
+            check_thread(thread)
+        else:
+            text_1.delete("1.0", "end-1c")
+            text_1.insert("0.0", f"ERROR: Please choose Pipe Support list")
+    else:
+        text_1.delete("1.0", "end-1c")
+        text_1.insert("0.0", f"ERROR: {pre_check_status}")
     return
 
 def fill_sd_tags():
@@ -439,9 +453,8 @@ def fill_sd_tags():
 
     draw_check_box = rev_circle_check_box.get()
 
-    text_1 = customtkinter.CTkTextbox(master=app, width=600, height=170)
-    text_1.grid(row=7, column=1, pady=10, padx=10, sticky="n")
-    text_1.insert("0.0", f"{fb.space_text}")
+    text_1.delete("1.0", "end-1c")
+    # text_1.insert("0.0", f"{fb.space_text}")
 
     try:
         acad = win32com.client.Dispatch("AutoCAD.Application")
@@ -553,6 +566,8 @@ def fill_sd_tags():
 
         write_log(os.getlogin(), f"Filling tags success! \n {detail_res}")
 
+        del acad
+
     except Exception as e:
         text_1.insert("0.0", f"ERROR: {e}")
         write_log(os.getlogin(), f"Filling tags ERROR: {e}")
@@ -563,17 +578,26 @@ def fill_sd_tags():
     return
 def start_fill():
     write_log(os.getlogin(), f"Start filling tags...")
-    text_1.destroy()
     confirmation_res = confirmation()
+    pre_check_status = pre_check()
+    text_1.delete("1.0", "end-1c")
     if confirmation_res == 1:
-        btn_fill_tags.configure(state=tkinter.DISABLED)
-        btn_check_tags.configure(state=tkinter.DISABLED)
-        btn_export_report.configure(state=tkinter.DISABLED)
-        thread = threading.Thread(target=fill_sd_tags)
-        print(threading.main_thread().name)
-        print(thread.name)
-        thread.start()
-        check_thread(thread)
+        if pre_check_status == 1:
+            if content != "Choose tag-list...":
+                btn_fill_tags.configure(state=tkinter.DISABLED)
+                btn_check_tags.configure(state=tkinter.DISABLED)
+                btn_export_report.configure(state=tkinter.DISABLED)
+                thread = threading.Thread(target=fill_sd_tags)
+                print(threading.main_thread().name)
+                print(thread.name)
+                thread.start()
+                check_thread(thread)
+            else:
+                text_1.delete("1.0", "end-1c")
+                text_1.insert("0.0", f"ERROR: Please choose Pipe Support list")
+        else:
+            text_1.delete("1.0", "end-1c")
+            text_1.insert("0.0", f"ERROR: {pre_check_status}")
     return
 
 def check_thread(thread):
