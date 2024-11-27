@@ -32,7 +32,7 @@ def change_spec_paths(spec_path, pcat_paths):
                             print(pcat_name, old_pcat_path)
                             print(pcat_paths[pcat_name])
 
-                            # elem.text = elem.text.replace("TEST", "TEST 0002")
+                            elem.text = elem.text.replace(old_pcat_path, pcat_paths[pcat_name][0])
 
                     # Save the modified XML into a BytesIO object
                     modified_xml = BytesIO()
