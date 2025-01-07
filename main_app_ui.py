@@ -28,7 +28,7 @@ customtkinter.set_default_color_theme("blue")  # Themes: "blue" (standard), "gre
 
 app = customtkinter.CTk()
 app.geometry("600x570")
-app.title("Pipe Support Verifier v.0.07")
+app.title("Pipe Support Tags Verifier v.0.1")
 app.iconbitmap(r'./icons/icon.ico')
 app.grid_columnconfigure(1, weight=1)
 
@@ -81,7 +81,7 @@ def help_menu_action():
     frame_help = customtkinter.CTkFrame(master=help_window, corner_radius=10)
     frame_help.grid(row=0, column=1, rowspan=4, sticky="nsew", pady=10, padx=10)
 
-    label_top = customtkinter.CTkLabel(master=frame_help, text="Pipe Support Verifier v0.04 (alpha test)",
+    label_top = customtkinter.CTkLabel(master=frame_help, text="Pipe Support Tags Verifier v0.1",
                                      font=customtkinter.CTkFont(size=20, weight="bold"))
     label_top.grid(pady=10, padx=10, sticky="nsew")
 
@@ -89,7 +89,8 @@ def help_menu_action():
                                      font=customtkinter.CTkFont(size=14))
     label_mid.grid(pady=10, padx=10, sticky="nsew")
 
-    guide_path = r"N:\Piping\_H_PPSE Users\IvaIgn\PSV\Pipe Support Verifier User Guide.pdf"
+    # guide_path = r"N:\Piping\_H_PPSE Users\IvaIgn\PSV\Pipe Support Verifier User Guide.pdf"
+    guide_path = r"https://uccorp.sharepoint.com/CSPD/CSPDFAQs/FAQ%2024004.pdf"
 
     write_log(os.getlogin(), f"HELP button was pushed")
 
@@ -169,9 +170,7 @@ file_menu.add_cascade("Help", command=help_menu_action)
 
 
 def export():
-    text_1 = customtkinter.CTkTextbox(master=app, width=600, height=170)
-    text_1.grid(row=7, column=1, pady=10, padx=10, sticky="n")
-    text_1.insert("0.0", f"{fb.space_text}")
+    text_1.delete("1.0", "end-1c")
 
     try:
         # Open the save file dialog
@@ -184,10 +183,11 @@ def export():
             print(f"Path to report - {file_path}")
         else:
             print("NO filename")
-        write_log(os.getlogin(), f"Export report success")
+        text_1.insert("0.0", f"Report Exporting successful!")
+        write_log(os.getlogin(), f"Report Exporting successful!")
     except Exception as e:
         text_1.insert("0.0", f"ERROR: \n {e}")
-        write_log(os.getlogin(), f"Export report ERROR:\n{e}")
+        write_log(os.getlogin(), f"Report exporting ERROR:\n{e}")
 
 def check_load_sd_tags():
     global report_to_export
@@ -269,7 +269,10 @@ def check_load_sd_tags():
                                 elif load_tag in tag_list.keys() and not tag_list[load_tag]:
                                     waiting_sd_tag.append(f"{load_tag} - {sd_tag} - wait sd-tag")
                                 else:
-                                    wrong_load_tags.append(f"{load_tag.strip().replace("-", "n/a")} - {sd_tag} - need to double check LOAD TAG")
+                                    if load_tag == "-" and sd_tag == "-":
+                                        pass
+                                    else:
+                                        wrong_load_tags.append(f"{load_tag.strip().replace("-", "n/a")} - {sd_tag} - need to double check LOAD TAG")
                             except Exception as e:
                                 print(e)
             else:
