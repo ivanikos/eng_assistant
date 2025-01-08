@@ -94,16 +94,21 @@ def export_report(report, filename):
     return
 
 def write_log(user_name, message):
-    log_path = r"N:\Piping\_H_PPSE Users\IvaIgn\PSV\logs\\"
+    log_path = r"N:\Piping\_B_Piping General Reference Info\Standards\Contract Tools\Pipe Suppport Tag Verifier\logs\\"
 
     log_file_path = f"{log_path}{user_name}_log.txt"
     current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
     log_entry = f"{current_time} - {message}\n"
-
-    with open(log_file_path, "a") as log_file:
-        log_file.write(log_entry)
-        log_file.write("\n*************\n")
+    try:
+        with open(log_file_path, "a") as log_file:
+            log_file.write(log_entry)
+            log_file.write("\n*************\n")
+    except:
+        log_path = r"N:\Piping\_H_PPSE Users\IvaIgn\PSV\logs\\"
+        with open(log_file_path, "a") as log_file:
+            log_file.write(log_entry)
+            log_file.write("\n*************\n")
 
 
 def pre_check():
