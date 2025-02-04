@@ -26,7 +26,7 @@ def change_spec_paths(spec_path, pcat_paths):
                     for elem in root.iter():
 
                     # Make modifications to the XML (example: modify tag)
-                        if "pcat" in elem.text:
+                        if "pcat" in elem.text or "acat" in elem.text:
                             pcat_name = elem.text.split("\\")[-1]
                             old_pcat_path = elem.text.strip()
                             print(pcat_name, old_pcat_path)
@@ -63,7 +63,7 @@ def get_pcat_list(spec_path):
                     root = tree.getroot()
                     for elem in root.iter():
                         # Make modifications to the XML (example: modify tag)
-                        if "pcat" in elem.text:
+                        if "pcat" in elem.text or "acat" in elem.text:
                             pcat_name = elem.text.split("\\")[-1]
                             old_pcat_path = elem.text.strip()
                             pcat_list.append(old_pcat_path)

@@ -12,10 +12,6 @@ import tkinterdnd2
 import threading
 from tkinter.filedialog import askopenfile, asksaveasfilename
 
-import win32com.client
-
-from modules.fill_block import check_sd_tags
-from modules.logics import write_log
 from modules.sm_logic import get_pcat_list, change_spec_paths
 
 # Functions section-------------------------------------------------------------
@@ -28,7 +24,7 @@ def open_new_pcat():
     global pcat_paths
     global original_pcat_paths_list
     global not_ok
-    pcat_file = askopenfile(mode="r", filetypes=[("Catalog Files", "*.pcat")])  # there is an option to choose only .xlsx- filetypes=[("Excel Files", "*.xlsx")]
+    pcat_file = askopenfile(mode="r", filetypes=[("Catalog Files", "*.*cat")])  # there is an option to choose only .xlsx- filetypes=[("Excel Files", "*.xlsx")]
     print(pcat_file.name)
 
 
@@ -39,7 +35,7 @@ def open_new_pcat():
             pcat_paths[str(pcat_file.name).split("/")[-1]][0] = pcat_file.name
             pcat_paths[str(pcat_file.name).split("/")[-1]][2] = "ok"
 
-            file_name_pcat = customtkinter.CTkLabel(master=frame_pcat, text=f"{pcat_file.name.replace("/", "\\")}", anchor="center")
+            file_name_pcat = customtkinter.CTkLabel(master=frame_pcat, text=pcat_file.name.replace("/", "\\"), anchor="center")
             file_name_pcat.grid(row=f"{row_number}", column=0,
                                 pady=10, padx=10, sticky="w")
 
